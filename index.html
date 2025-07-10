@@ -387,23 +387,19 @@
         <section id="booking" class="text-center">
             <h2>Book an Appointment</h2>
             <div class="container booking">
-                <form class="booking-form" onsubmit="handleSubmit(event)">
-                    <input type="text" placeholder="Name" required>
-                    <input type="email" placeholder="Email" required>
-                    <input type="tel" placeholder="Phone" required>
-
+                <form id="select-booking-options" class="booking-form">
                     <label for="location-select">Choose a location:</label>
-                    <select name="location" id="location-select">
-                    <option value="">--Select location--</option>
+                    <select name="location" id="location-select" required>
+                        <option value="">--Select location--</option>
                     </select>
 
                     <label for="service-select">Choose a service:</label>
-                    <select name="service" id="service-select">
+                    <select name="service" id="service-select" required>
                         <option value="">--Select Service--</option>
                     </select>
 
-                    <input type="datetime-local" required>
-                    <button type="submit" class="cta-button">Confirm Booking</button>
+                    <input name="date" type="date" required>
+                    <button type="submit" id="get-available-time-slots" class="cta-button">Search</button>
                 </form> 
             </div>
         </section> 

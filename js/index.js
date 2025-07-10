@@ -54,21 +54,37 @@ whenReady().then(() => {
         })
     });
 
-    locationSelect.addEventListener("change", function(event) {
-        const dataGroup = event.target.value;
-        document.getElementById('service-select').querySelectorAll('option').forEach((option) => {
-
-            if(option.dataset.group) {
+    document.getElementById('location-select').addEventListener("change", function(event) {
+        const dataGroup = this.value;
+        const serviceSelect = document.getElementById('service-select');
+        for (const option of serviceSelect.options) {
+            if(option.dataset.group !== undefined) {
                 if(option.dataset.group == dataGroup) {
                     option.classList.remove('d-none');
                 } else {
                     option.classList.add('d-none');
                 }
             } 
-
-        });
+        };
     });
 
+    document.getElementById('get-available-time-slots').addEventListener("click", function(event) {
+        event.preventDefault();
+
+        const formElements = document.getElementById('select-booking-options').elements;
+        const locationSelect = formElements["location"];
+        const serviceSelect = formElements["service"];
+        const dateInput = formElements["date"];
+        try {
+            const params = {
+                'date': dateInput.value
+            }
+            const response = rpc('/hbn/appointment/' + serviceSelect.value, params);
+            console.log(response);
+        } catch (error) {
+            console.log("JSON-RPC Error:", error);
+        }
+    });
   
 });
 
