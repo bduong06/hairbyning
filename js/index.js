@@ -33,6 +33,7 @@ whenReady().then(() => {
     document.querySelectorAll('#portfolio a').forEach((elm, index) => {
     elm.addEventListener('click', event => {
         event.preventDefault();
+
         galleryCarousel.to(index);
     })
     });
@@ -48,6 +49,8 @@ whenReady().then(() => {
     const colNavbarElm = document.getElementById('colNavbar');
     colNavbarElm.querySelectorAll('.nav-link').forEach((elm, index) => {
         elm.addEventListener('click', event => {
+            event.preventDefault();
+
             if (colNavbarElm.classList.contains('show')) {
                 bootstrap.Collapse.getInstance(colNavbarElm).toggle();
             }
@@ -55,6 +58,8 @@ whenReady().then(() => {
     });
 
     document.getElementById('location-select').addEventListener("change", function(event) {
+        event.preventDefault();
+
         const dataGroup = this.value;
         const serviceSelect = document.getElementById('service-select');
         for (const option of serviceSelect.options) {
@@ -68,19 +73,19 @@ whenReady().then(() => {
         };
     });
 
-    document.getElementById('get-available-time-slots').addEventListener("click", function(event) {
+    document.getElementById('get-available-time-slots').addEventListener("click", async function(event) {
         event.preventDefault();
 
         const formElements = document.getElementById('select-booking-options').elements;
         const locationSelect = formElements["location"];
         const serviceSelect = formElements["service"];
-        const dateInput = formElements["date"];
+        const date = formElements["date"].value;
         try {
             const params = {
-                'date': dateInput.value
+                'date': date
             }
-            const response = rpc('/hbn/appointment/' + serviceSelect.value, params);
-            console.log(response);
+            const response = await rpc('/hbn/appointment/' + serviceSelect.value, params);
+            showAvailableTimeSlots(date,response);
         } catch (error) {
             console.log("JSON-RPC Error:", error);
         }
@@ -112,8 +117,6 @@ whenReady().then(() => {
 
 })();
 
-
-
 function prepare_selects(response) {
 
     var locationSelect = document.getElementById('location-select');
@@ -137,4 +140,14 @@ function prepare_selects(response) {
             service_select.options[service_select.options.length] = new Option (service,"");
         }) 
     });*/
+
+}
+
+function showAvailableTimeSlots(date, response) {
+    const dateInput = document.getElementById('booking-date');
+    dateInput.value = date;
+    document.getElementById('modal-body').innerHTML = response;
+    const availableTimeSlotsModal = new bootstrap.Modal('#show-available-time-slots', {keyboard: false});
+    availableTimeSlotsModal.show();
+
 }
