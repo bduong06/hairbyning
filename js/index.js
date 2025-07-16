@@ -49,8 +49,6 @@ whenReady().then(() => {
     const colNavbarElm = document.getElementById('colNavbar');
     colNavbarElm.querySelectorAll('.nav-link').forEach((elm, index) => {
         elm.addEventListener('click', event => {
-            event.preventDefault();
-
             if (colNavbarElm.classList.contains('show')) {
                 bootstrap.Collapse.getInstance(colNavbarElm).toggle();
             }
@@ -62,7 +60,17 @@ whenReady().then(() => {
 
         const dataGroup = this.value;
         const serviceSelect = document.getElementById('service-select');
+        const capacitySelect = document.getElementById('capacity-select');
         for (const option of serviceSelect.options) {
+            if(option.dataset.group !== undefined) {
+                if(option.dataset.group == dataGroup) {
+                    option.classList.remove('d-none');
+                } else {
+                    option.classList.add('d-none');
+                }
+            } 
+        };
+        for (const option of capacitySelect.options) {
             if(option.dataset.group !== undefined) {
                 if(option.dataset.group == dataGroup) {
                     option.classList.remove('d-none');
@@ -73,16 +81,18 @@ whenReady().then(() => {
         };
     });
 
-    document.getElementById('get-available-time-slots').addEventListener("click", async function(event) {
+    document.getElementById('select-booking-options').addEventListener("submit", async function(event) {
         event.preventDefault();
 
-        const formElements = document.getElementById('select-booking-options').elements;
-        const locationSelect = formElements["location"];
+//        const form = document.getElementById('select-booking-options');
+        const formElements = this.elements;
         const serviceSelect = formElements["service"];
         const date = formElements["date"].value;
+        const asked_capacity = formElements["capacity"].value;
         try {
             const params = {
-                'date': date
+                'date': date,
+                'asked_capacity': asked_capacity
             }
             const response = await rpc('/hbn/appointment/' + serviceSelect.value, params);
             showAvailableTimeSlots(date,response);
@@ -117,14 +127,39 @@ whenReady().then(() => {
 
 })();
 
+
+
+// Example starter JavaScript for disabling form submissions if there are invalid fields
+(() => {
+  'use strict'
+
+  // Fetch all the forms we want to apply custom Bootstrap validation styles to
+  const forms = document.querySelectorAll('.needs-validation')
+
+  // Loop over them and prevent submission
+  Array.from(forms).forEach(form => {
+    form.addEventListener('submit', event => {
+      if (!form.checkValidity()) {
+        event.preventDefault()
+        event.stopImmediatePropagation()
+      }
+
+      form.classList.add('was-validated')
+    }, false)
+  })
+})()
+
+
 function prepare_selects(response) {
 
     var locationSelect = document.getElementById('location-select');
     var serviceSelect = document.getElementById('service-select');
+    var capacitySelect = document.getElementById('capacity-select');
     var arr = Object.keys(response);
 
     for (const [key, location] of Object.entries(arr)) {
         var locationOption = new Option(location, key);
+        var capacity;
         locationOption.setAttribute('data-group', key);
         locationSelect.options[locationSelect.options.length] = locationOption;
         for (const [key1, service] of Object.entries(response[location])) {
@@ -132,6 +167,13 @@ function prepare_selects(response) {
             serviceOption.setAttribute('data-group', key);
             serviceOption.classList.add('d-none');
             serviceSelect.options[serviceSelect.options.length] = serviceOption;
+            capacity = service.max_capacity;
+        }
+        for (let i = 1; i <= capacity; i++) {
+            var capacityOption = new Option(i, i);
+            capacityOption.setAttribute('data-group', key);
+            capacityOption.classList.add('d-none');
+            capacitySelect.options[capacitySelect.options.length] = capacityOption;
         }
     }
 /*    Object.keys(arr).foreach (location => {
@@ -144,10 +186,27 @@ function prepare_selects(response) {
 }
 
 function showAvailableTimeSlots(date, response) {
+    const slots = response.slots;
     const dateInput = document.getElementById('booking-date');
+    const dateRows = document.getElementById('booking-dates-row').getElementsByTagName('div');
+    var index = slots.findIndex(slot => slot.day == date);
+
     dateInput.value = date;
-    document.getElementById('modal-body').innerHTML = response;
+
+    if(slots[index - 3].slots.length > 0) {
+        index = index - 3;
+    } else {
+        index = slots.findIndex(slot => slot.slots.length > 0);
+    }
+
+    for(let i=0; i<8; i++){
+        dateRows[i].textContent = slots[index +i].day;
+        if (slots[index + i].day == date) {
+            dateRows[i].classList.add('active');
+        }
+    }
+
+    console.log(slots);
     const availableTimeSlotsModal = new bootstrap.Modal('#show-available-time-slots', {keyboard: false});
     availableTimeSlotsModal.show();
-
 }

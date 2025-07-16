@@ -389,23 +389,29 @@
             <div class="container booking">
                 <form id="select-booking-options" class="booking-form">
                     <label for="location-select">Choose a location:</label>
-                    <select name="location" id="location-select" required>
+                    <select class="form-select" name="location" id="location-select" required>
                         <option value="">--Select location--</option>
                     </select>
 
                     <label for="service-select">Choose a service:</label>
-                    <select name="service" id="service-select" required>
+                    <select class="form-select" name="service" id="service-select" required>
                         <option value="">--Select Service--</option>
                     </select>
 
-                    <input name="date" type="date" required>
+                    <label for="capacity-select">How many people:</label>
+                    <select class="form-select" name="capacity" id="capacity-select" required>
+                        <option value="">--Select how many--</option>
+                    </select>
+
+                    <label for="date-select">Choose date:</label>
+                    <input class="form-control" name="date" type="date" id="date-select" required>
                     <button type="submit" id="get-available-time-slots" class="cta-button">Search</button>
                 </form> 
             </div>
         </section> 
 
         <div class="modal fade" id="show-available-time-slots" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
             <div class="modal-header">
                 <h1 class="modal-title fs-5" id="staticBackdropLabel">Modal title</h1>
@@ -413,6 +419,26 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div id="modal-body" class="modal-body">
+                <div class="container-fluid text-center">
+                      <div id="booking-dates-row" class="row">
+                        <div data-date-index="0" class="col">
+                        </div>
+                        <div data-date-index="1" class="col">
+                        </div>
+                        <div data-date-index="2" class="col">
+                        </div>
+                        <div data-date-index="3" class="col">
+                        </div>
+                        <div data-date-index="4" class="col">
+                        </div>
+                        <div data-date-index="5" class="col">
+                        </div>
+                        <div data-date-index="6" class="col">
+                        </div>
+                        <div data-date-index="7" class="col">
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
