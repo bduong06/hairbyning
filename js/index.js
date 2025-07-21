@@ -185,28 +185,50 @@ function prepare_selects(response) {
 
 }
 
-function showAvailableTimeSlots(date, response) {
-    const slots = response.slots;
+function showAvailableTimeSlots(date, booking_type) {
+    const slots = booking_type.slots;
     const dateInput = document.getElementById('booking-date');
     const dateRows = document.getElementById('booking-dates-row').getElementsByTagName('div');
     var index = slots.findIndex(slot => slot.day == date);
 
     dateInput.value = date;
 
-    if(slots[index - 3].slots.length > 0) {
-        index = index - 3;
+    if(slots[index - 2].slots.length > 0) {
+        index = index - 2;
     } else {
         index = slots.findIndex(slot => slot.slots.length > 0);
     }
 
-    for(let i=0; i<8; i++){
-        dateRows[i].textContent = slots[index +i].day;
+    var i = 0;
+    for(const div of dateRows){
+        const shortDate = new Date(slots[index +i].day);
+        div.textContent = shortDate.toLocaleString('en-US',{month: "short", day: "numeric"});
+        div.dataset.availableTimeSlots = JSON.stringify(slots[index +i].slots);
         if (slots[index + i].day == date) {
-            dateRows[i].classList.add('active');
-        }
+            div.classList.add('active');
+            createBookingCards(booking_type,slots[index +i].slots);
+        } 
+        i++;
     }
 
-    console.log(slots);
+
     const availableTimeSlotsModal = new bootstrap.Modal('#show-available-time-slots', {keyboard: false});
     availableTimeSlotsModal.show();
+}
+
+function createBookingCards(booking_type, slots) {
+    const slotArray = slots;
+
+    const template = document.getElementById('available-time-slots');
+    const bookingElements = template.content.querySelectorAll(".booking_type");
+    const slotElements = template.content.querySelectorAll(".slot");
+    for(const slot of slotArray){
+        for(const bookingElm of bookingElements){
+            bookingElm.textContent = booking_type[bookingElm.dataset.name];
+        }
+        for(const slotElm of slotElements){
+            slotElm.textContent = slot[slotElm.dataset.name];
+        }
+        document.getElementById('modal-body').appendChild(template.content.cloneNode(true));
+    }
 }
