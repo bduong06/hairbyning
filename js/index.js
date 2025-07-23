@@ -185,11 +185,12 @@ function prepare_selects(response) {
 
 }
 
-function showAvailableTimeSlots(date, booking_type) {
-    const slots = booking_type.slots;
+function showAvailableTimeSlots(date, response) {
+    const slots = response.slots;
     const dateInput = document.getElementById('booking-date');
-    const dateRows = document.getElementById('booking-dates-row').getElementsByTagName('div');
-    var index = slots.findIndex(slot => slot.day == date);
+    const dateButtons = document.querySelectorAll('#available-dates-nav button');
+    const bookingDetails = document.querySelectorAll('#booking-details-row span');
+    let index = slots.findIndex(slot => slot.day == date);
 
     dateInput.value = date;
 
@@ -200,15 +201,20 @@ function showAvailableTimeSlots(date, booking_type) {
     }
 
     var i = 0;
-    for(const div of dateRows){
+    for(const dateButton of dateButtons){
         const shortDate = new Date(slots[index +i].day);
-        div.textContent = shortDate.toLocaleString('en-US',{month: "short", day: "numeric"});
-        div.dataset.availableTimeSlots = JSON.stringify(slots[index +i].slots);
+        dateButton.textContent = shortDate.toLocaleString('en-US',{month: "short", day: "numeric"});
+        dateButton.dataset.availableTimeSlots = JSON.stringify(slots[index +i].slots);
         if (slots[index + i].day == date) {
-            div.classList.add('active');
-            createBookingCards(booking_type,slots[index +i].slots);
+            dateButton.classList.add('active');
+            createBookingCards(slots[index +i].slots);
         } 
         i++;
+    }
+
+    response['date'] = date;
+    for(const span of bookingDetails){
+        span.textContent = response[span.dataset.prop];
     }
 
 
@@ -216,19 +222,17 @@ function showAvailableTimeSlots(date, booking_type) {
     availableTimeSlotsModal.show();
 }
 
-function createBookingCards(booking_type, slots) {
+function createBookingCards(slots) {
     const slotArray = slots;
-
-    const template = document.getElementById('available-time-slots');
-    const bookingElements = template.content.querySelectorAll(".booking_type");
-    const slotElements = template.content.querySelectorAll(".slot");
+    const template = document.getElementById('available-time-slot');
+    const spanElements = template.content.querySelectorAll("span");
+    const selectButton = template.content.querySelector("button");
     for(const slot of slotArray){
-        for(const bookingElm of bookingElements){
-            bookingElm.textContent = booking_type[bookingElm.dataset.name];
+        for(const span of spanElements){
+            span.textContent = slot[span.dataset.prop];
         }
-        for(const slotElm of slotElements){
-            slotElm.textContent = slot[slotElm.dataset.name];
-        }
-        document.getElementById('modal-body').appendChild(template.content.cloneNode(true));
+        selectButton.dataset.availableResources=JSON.stringify(slot['available_resources']);
+        selectButton.dataset.urlParameters=slot['url_parameters'];
+        document.getElementById('available-time-slots-container').appendChild(template.content.cloneNode(true));
     }
 }
