@@ -6,6 +6,9 @@ import {
     rpcBus,
 } from "../addons/web/static/src/core/network/rpc.js";
 
+import available_time_slots from "./views/available_time_slots.js";
+import requested_date_slots  from "./views/requested_date_slots.js";
+
 
 function whenReady(fn) {
     return new Promise(function (resolve) {
@@ -176,63 +179,53 @@ function prepare_selects(response) {
             capacitySelect.options[capacitySelect.options.length] = capacityOption;
         }
     }
-/*    Object.keys(arr).foreach (location => {
-        location_select.options[location_select.options.length] = new Option (location,"");
-        response[location].foreach(service => {
-            service_select.options[service_select.options.length] = new Option (service,"");
-        }) 
-    });*/
 
 }
 
 function showAvailableTimeSlots(date, response) {
-    const slots = response.slots;
     const dateInput = document.getElementById('booking-date');
-    const dateButtons = document.querySelectorAll('#available-dates-nav button');
-    const bookingDetails = document.querySelectorAll('#booking-details-row span');
-    let index = slots.findIndex(slot => slot.day == date);
 
+    let startIndex = response.slots.findIndex(slot => slot.slots.length > 0);
     dateInput.value = date;
 
-    if(slots[index - 2].slots.length > 0) {
-        index = index - 2;
+    const availableSlots = response.slots.slice(startIndex);
+    const selectedDateIndex = availableSlots.findIndex(slot => slot.day == date);
+
+    if(selectedDateIndex - 2 >= 0){
+        startIndex = selectedDateIndex - 2; 
     } else {
-        index = slots.findIndex(slot => slot.slots.length > 0);
+        startIndex = 0; 
     }
 
-    var i = 0;
-    for(const dateButton of dateButtons){
-        const shortDate = new Date(slots[index +i].day);
-        dateButton.textContent = shortDate.toLocaleString('en-US',{month: "short", day: "numeric"});
-        dateButton.dataset.availableTimeSlots = JSON.stringify(slots[index +i].slots);
-        if (slots[index + i].day == date) {
-            dateButton.classList.add('active');
-            createBookingCards(slots[index +i].slots);
-        } 
-        i++;
-    }
+    let html = ejs.render(available_time_slots, {
+        date: date, 
+        asked_capacity: response['asked_capacity'],
+        location: response['location'],
+        availableSlots: availableSlots,
+        requestedDateSlots: availableSlots[selectedDateIndex].slots,
+        startIndex: startIndex
+    })
 
-    response['date'] = date;
-    for(const span of bookingDetails){
-        span.textContent = response[span.dataset.prop];
-    }
+    document.getElementById('modal-body').innerHTML = html;
 
+    var triggerTabList = [].slice.call(document.querySelectorAll('#available-dates-nav button'))
+    triggerTabList.forEach(function (triggerEl) {
+        var tabTrigger = new bootstrap.Tab(triggerEl)
 
+        triggerEl.addEventListener('click', function (event) {
+            event.preventDefault()
+            if(this.hasAttribute('data-slot-date')){
+                if(!this.classList.contains('active')){
+                    document.getElementById('current-slot-date').innerHTML = this.dataset.slotDate;
+                    html = ejs.render(requested_date_slots, {requestedDateSlots: JSON.parse(this.dataset.availableSlots) });
+                    document.getElementById('available-time-slots-container').innerHTML = html;
+                    tabTrigger.show();
+                }
+            } else {
+
+            }
+        })
+    })
     const availableTimeSlotsModal = new bootstrap.Modal('#show-available-time-slots', {keyboard: false});
     availableTimeSlotsModal.show();
-}
-
-function createBookingCards(slots) {
-    const slotArray = slots;
-    const template = document.getElementById('available-time-slot');
-    const spanElements = template.content.querySelectorAll("span");
-    const selectButton = template.content.querySelector("button");
-    for(const slot of slotArray){
-        for(const span of spanElements){
-            span.textContent = slot[span.dataset.prop];
-        }
-        selectButton.dataset.availableResources=JSON.stringify(slot['available_resources']);
-        selectButton.dataset.urlParameters=slot['url_parameters'];
-        document.getElementById('available-time-slots-container').appendChild(template.content.cloneNode(true));
-    }
 }
