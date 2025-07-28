@@ -208,24 +208,61 @@ function showAvailableTimeSlots(date, response) {
 
     document.getElementById('modal-body').innerHTML = html;
 
-    var triggerTabList = [].slice.call(document.querySelectorAll('#available-dates-nav button'))
+    var triggerTabList = [].slice.call(document.querySelectorAll('#available-dates-nav button'));
+
     triggerTabList.forEach(function (triggerEl) {
-        var tabTrigger = new bootstrap.Tab(triggerEl)
-
+        var tabTrigger = new bootstrap.Tab(triggerEl);
         triggerEl.addEventListener('click', function (event) {
-            event.preventDefault()
-            if(this.hasAttribute('data-slot-date')){
-                if(!this.classList.contains('active')){
-                    document.getElementById('current-slot-date').innerHTML = this.dataset.slotDate;
-                    html = ejs.render(requested_date_slots, {requestedDateSlots: JSON.parse(this.dataset.availableSlots) });
-                    document.getElementById('available-time-slots-container').innerHTML = html;
-                    tabTrigger.show();
-                }
-            } else {
-
+            event.preventDefault();
+            if(!this.classList.contains('active')){
+                document.getElementById('current-slot-date').innerHTML = this.dataset.slotDate;
+                html = ejs.render(requested_date_slots, {requestedDateSlots: JSON.parse(this.dataset.availableSlots) });
+                document.getElementById('available-time-slots-container').innerHTML = html;
+                tabTrigger.show();
             }
         })
     })
+
+    document.getElementById('nav-control-prev').addEventListener('click', (event) => {
+        event.preventDefault();
+
+        const elm = event.target;
+        let tabList = [].slice.call(document.querySelectorAll('#available-dates-nav button'));
+        let index = parseInt(elm.dataset.startIndex);
+
+        for(let i=0; i < 7; i++){
+            tabList[index + i].classList.add('d-none');
+        }
+
+        index = (index - 7) < 0 ? 0 : index = index - 7;
+
+        for(let i=0; i < 7; i++){
+            tabList[index + i].classList.remove('d-none');
+        }
+        elm.dataset.startIndex = index;
+        document.getElementById('nav-control-next').dataset.startIndex = index;
+    })
+
+    document.getElementById('nav-control-next').addEventListener('click', (event) => {
+        event.preventDefault();
+
+        const elm = event.target;
+        let tabList = [].slice.call(document.querySelectorAll('#available-dates-nav button'));
+        let index = parseInt(elm.dataset.startIndex);
+
+        for(let i=0; i < 7; i++){
+            tabList[index + i].classList.add('d-none');
+        }
+
+        index = index + 14 > tabList.length ? tabList.length -7 : index + 7;
+
+        for(let i=0; i < 7; i++){
+            tabList[index + i].classList.remove('d-none');
+        }
+        elm.dataset.startIndex = index;
+        document.getElementById('nav-control-prev').dataset.startIndex = index;
+    })
+
     const availableTimeSlotsModal = new bootstrap.Modal('#show-available-time-slots', {keyboard: false});
     availableTimeSlotsModal.show();
 }
