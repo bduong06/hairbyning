@@ -1,12 +1,23 @@
 const available_time_slots = `
-    <div class="container-fluid text-center">
+<div class="modal-header">
+    <div class="conatainer">
+        <div class="row">
+            <div class="col">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="#">Home</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Select</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
         <div class="row">
             <div class="col-1">
                 <button id="nav-control-prev" data-start-index="<%= startIndex %>" class="nav-link" type="button" role="tab">&lt</button>
             </div>
             <div class="col-9">
                 <ul class="nav nav-tabs" id="available-dates-nav" role="tablist">
-                  <% availableSlots.forEach((slot, index) => {
+                    <% availableSlots.forEach((slot, index) => {
                     let active = null;
                     let dnone = " d-none";
                     const slotDate = slot.day;
@@ -18,16 +29,20 @@ const available_time_slots = `
                             <%= shortDate.toLocaleString('en-US',{month: "short", day: "numeric"}); %>
                         </button>
                     </li>
-                  <% }) %>
+                    <% }) %>
                 </ul>
             </div>
             <div class="col-1">
                 <button id="nav-control-next" data-start-index="<%= startIndex %>" class="nav-link" type="button" role="tab">&gt</button>
             </div>
             <div class="col-1">
-                <input id="available-slots-cal" name="date" type="date">
+                <input id="slots-datepicker" class="form-control" name="date" type="text">
             </div>
         </div>
+    </div>
+</div>
+<div class="modal-body">
+    <div class="container-fluid text-center">
         <div id="booking-details-row" class="row">
             <div class="col">
                 <h3>Booking Details</h3>
@@ -38,6 +53,12 @@ const available_time_slots = `
             </div>
         </div>
         <div id="available-time-slots-container" class="container">
+            <form id="time_slots_form"  autocomplete="off">
+                <input type="hidden" name="active" value="True">
+                <input type="hidden" name="appointment_type_id" value="<%= appointment_type_id %>">
+                <input type="hidden" name="schedule_based_on" value="resources">
+                <input type="hidden" name="assign_method" value="time_auto_assign">
+            </form>  
         <% let row = true;
             let col = 1;
             for (const slot of requestedDateSlots){ %>
@@ -67,6 +88,9 @@ const available_time_slots = `
             <% } %>
         </div>
     </div>
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 </div>`;
 
 export default available_time_slots;

@@ -9,7 +9,6 @@ import {
 import available_time_slots from "./views/available_time_slots.js";
 import requested_date_slots  from "./views/requested_date_slots.js";
 
-
 function whenReady(fn) {
     return new Promise(function (resolve) {
         if (document.readyState !== "loading") {
@@ -97,12 +96,19 @@ whenReady().then(() => {
                 'date': date,
                 'asked_capacity': asked_capacity
             }
-            const response = await rpc('/hbn/appointment/' + serviceSelect.value, params);
+            const response = await rpc('/hbn/appointment/' + encodeURIComponent(serviceSelect.value), params);
             showAvailableTimeSlots(date,response);
         } catch (error) {
             console.log("JSON-RPC Error:", error);
         }
     });
+
+    const elem = document.getElementById('date-select');
+    const datepicker = new Datepicker(elem, {
+        buttonClass: 'btn', 
+        autohide: true,
+        format: "yyyy-mm-dd"
+     }); 
   
 });
 
@@ -183,10 +189,7 @@ function prepare_selects(response) {
 }
 
 function showAvailableTimeSlots(date, response) {
-    const dateInput = document.getElementById('booking-date');
-
     let startIndex = response.slots.findIndex(slot => slot.slots.length > 0);
-    dateInput.value = date;
 
     const availableSlots = response.slots.slice(startIndex);
     const selectedDateIndex = availableSlots.findIndex(slot => slot.day == date);
@@ -201,12 +204,21 @@ function showAvailableTimeSlots(date, response) {
         date: date, 
         asked_capacity: response['asked_capacity'],
         location: response['location'],
+        appointment_type_id: response['appointment_type_id'],
         availableSlots: availableSlots,
         requestedDateSlots: availableSlots[selectedDateIndex].slots,
         startIndex: startIndex
     })
 
-    document.getElementById('modal-body').innerHTML = html;
+    document.getElementById('time-slots-modal-content').innerHTML = html;
+
+    const elem = document.getElementById('slots-datepicker');
+    const datepicker = new Datepicker(elem, {
+        buttonClass: 'btn', 
+        autohide: true , 
+        datesDisabled: isDateDisabled,
+        format: 'yyyy-mm-dd'
+    }); 
 
     var triggerTabList = [].slice.call(document.querySelectorAll('#available-dates-nav button'));
 
@@ -265,4 +277,10 @@ function showAvailableTimeSlots(date, response) {
 
     const availableTimeSlotsModal = new bootstrap.Modal('#show-available-time-slots', {keyboard: false});
     availableTimeSlotsModal.show();
+}
+
+function isDateDisabled(date, viewId, rangeEnd){
+    let dateDisabled;
+
+    return dateDisabled;
 }
