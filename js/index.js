@@ -220,6 +220,25 @@ function showAvailableTimeSlots(date, response) {
         format: 'yyyy-mm-dd'
     }); 
 
+    document.getElementById('slots-datepicker').addEventListener('changeDate', (event) => {
+        event.preventDefault();
+        const selectedDate = event.detail.date;
+        const tabList = [].slice.call(document.querySelectorAll('#available-dates-nav button'));
+        tabList.forEach(function(tab, index){
+            const date = new Date(tab.dataset.slotDate);
+            date.setHours(0,0,0,0);
+            if(selectedDate.getTime() === date.getTime()){
+                const event = new MouseEvent("click", {
+                    view: window,
+                    bubbles: true,
+                    cancelable: true,
+                });
+                showAvailableTimeSlotsTabs(tabList, index);
+                tab.dispatchEvent(event);
+            }
+        })
+    })
+
     var triggerTabList = [].slice.call(document.querySelectorAll('#available-dates-nav button'));
 
     triggerTabList.forEach(function (triggerEl) {
@@ -230,6 +249,12 @@ function showAvailableTimeSlots(date, response) {
                 document.getElementById('current-slot-date').innerHTML = this.dataset.slotDate;
                 html = ejs.render(requested_date_slots, {requestedDateSlots: JSON.parse(this.dataset.availableSlots) });
                 document.getElementById('available-time-slots-container').innerHTML = html;
+                document.getElementById('available-time-slots-container').querySelectorAll('button').forEach((elm) => (
+                    elm.addEventListener('click', (event) => {
+                        event.preventDefault();
+                        selectTimeSlot(event);
+                    })
+                ))
                 tabTrigger.show();
             }
         })
@@ -275,12 +300,65 @@ function showAvailableTimeSlots(date, response) {
         document.getElementById('nav-control-prev').dataset.startIndex = index;
     })
 
+    document.getElementById('available-time-slots-container').querySelectorAll('button').forEach((elm) => (
+        elm.addEventListener('click', (event) => {
+            event.preventDefault();
+            selectTimeSlot(event);
+        })
+    ))
+
     const availableTimeSlotsModal = new bootstrap.Modal('#show-available-time-slots', {keyboard: false});
     availableTimeSlotsModal.show();
 }
 
 function isDateDisabled(date, viewId, rangeEnd){
-    let dateDisabled;
+    let dateDisabled = true;
+    const tabList = [].slice.call(document.querySelectorAll('#available-dates-nav button'));
+    const firstDate = new Date(tabList[0].dataset.slotDate);
+    const lastDate = new Date(tabList[tabList.length - 1].dataset.slotDate);
+    firstDate.setHours(0,0,0,0);
+    lastDate.setHours(0,0,0,0);
+    if((date.getTime() >= firstDate.getTime()) &&  (date.getTime() <= lastDate)){
+        dateDisabled = false;
+    }
 
     return dateDisabled;
+}
+
+function showAvailableTimeSlotsTabs(tabList, startIndex){
+    let index = parseInt(document.getElementById('nav-control-next').dataset.startIndex);
+
+    for(let i=0; i < 7; i++){
+        tabList[index + i].classList.add('d-none');
+    }
+
+    index = startIndex - 2 < 0 ? 0 : startIndex -2;
+    for(let i=0; i < 7; i++){
+        tabList[index + i].classList.remove('d-none');
+    }
+
+    document.getElementById('nav-control-next').dataset.startIndex = index;
+    document.getElementById('nav-control-prev').dataset.startIndex = index;
+}
+
+async function selectTimeSlot(event){
+    event.preventDefault();
+    const form = document.getElementById('time_slots_form');
+    const appointment_type_id = form.elements['appointment_type_id'];
+    const urlParameters = decodeURIComponent(event.target.dataset.urlParameters);
+
+/*    date_time, duration, staff_user_id=None, resource_selected_id=None, available_resource_ids=None, asked_capacity=1, **kwargs):*/
+    try {
+/*        const params = {
+            'date': date,
+            'asked_capacity': asked_capacity
+        }
+        const response = await rpc('/hbn/appointment/' + encodeURIComponent(appointment_type_id), params);
+        showAvailableTimeSlots(date,response);*/
+    } catch (error) {
+        console.log("JSON-RPC Error:", error);
+    }
+
+    const button = event.target;
+
 }
