@@ -36,7 +36,7 @@ const available_time_slots = `
                 <button id="nav-control-next" data-start-index="<%= startIndex %>" class="nav-link" type="button" role="tab">&gt</button>
             </div>
             <div class="col-1">
-                <input id="slots-datepicker" class="form-control" name="date" type="text" autocomplete="off">
+                <input id="slots-datepicker" class="form-control date-picker" name="date" type="text" autocomplete="off" readonly="true">
             </div>
         </div>
     </div>

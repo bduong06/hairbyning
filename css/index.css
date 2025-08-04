@@ -131,6 +131,13 @@
             border-radius: 5px;
         }
 
+        .date-picker {
+            background-image: url('../images/date-picker.png');
+            background-position: 97% center; /* Adjust as needed */
+            background-repeat: no-repeat;
+            cursor: pointer; /* Indicate it's clickable */
+        }
+
         /* Pricing Section */
         .carousel-control-prev-icon, .carousel-control-next-icon {
             color: #822185;

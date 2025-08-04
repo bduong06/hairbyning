@@ -8,6 +8,7 @@ import {
 
 import available_time_slots from "./views/available_time_slots.js";
 import requested_date_slots  from "./views/requested_date_slots.js";
+import appointment_form  from "./views/appointment_form.js";
 
 function whenReady(fn) {
     return new Promise(function (resolve) {
@@ -93,8 +94,8 @@ whenReady().then(() => {
         const asked_capacity = formElements["capacity"].value;
         try {
             const params = {
-                'date': date,
-                'asked_capacity': asked_capacity
+                'date': encodeURIComponent(date),
+                'asked_capacity': encodeURIComponent(asked_capacity)
             }
             const response = await rpc('/hbn/appointment/' + encodeURIComponent(serviceSelect.value), params);
             showAvailableTimeSlots(date,response);
@@ -139,7 +140,7 @@ whenReady().then(() => {
 
 
 // Example starter JavaScript for disabling form submissions if there are invalid fields
-(() => {
+/*(() => {
   'use strict'
 
   // Fetch all the forms we want to apply custom Bootstrap validation styles to
@@ -148,15 +149,15 @@ whenReady().then(() => {
   // Loop over them and prevent submission
   Array.from(forms).forEach(form => {
     form.addEventListener('submit', event => {
-      if (!form.checkValidity()) {
-        event.preventDefault()
-        event.stopImmediatePropagation()
-      }
+        if (!form.checkValidity()) {
+            event.preventDefault()
+            event.stopImmediatePropagation()
+        }
 
-      form.classList.add('was-validated')
-    }, false)
+        form.classList.add('was-validated')
+        }, false)
   })
-})()
+})()*/
 
 
 function prepare_selects(response) {
@@ -210,18 +211,20 @@ function showAvailableTimeSlots(date, response) {
         startIndex: startIndex
     })
 
-    document.getElementById('time-slots-modal-content').innerHTML = html;
+    document.getElementById('booking-modal-content').innerHTML = html;
 
     const elem = document.getElementById('slots-datepicker');
     const datepicker = new Datepicker(elem, {
         buttonClass: 'btn', 
         autohide: true , 
         datesDisabled: isDateDisabled,
+        updateOnBlur: false,
         format: 'yyyy-mm-dd'
     }); 
 
     document.getElementById('slots-datepicker').addEventListener('changeDate', (event) => {
         event.preventDefault();
+        event.target.value = null;
         const selectedDate = event.detail.date;
         const tabList = [].slice.call(document.querySelectorAll('#available-dates-nav button'));
         tabList.forEach(function(tab, index){
@@ -343,22 +346,36 @@ function showAvailableTimeSlotsTabs(tabList, startIndex){
 
 async function selectTimeSlot(event){
     event.preventDefault();
-    const form = document.getElementById('time_slots_form');
-    const appointment_type_id = form.elements['appointment_type_id'];
-    const urlParameters = decodeURIComponent(event.target.dataset.urlParameters);
+    const elements = document.getElementById('time_slots_form').elements;
+    const searchParams = new URLSearchParams(decodeURIComponent(event.target.dataset.urlParameters));
+    let params = {
+        "schedule_based_on": encodeURIComponent(elements['schedule_based_on'].value),
+        "assign_method": encodeURIComponent(elements['assign_method'].value)
+    };
 
-/*    date_time, duration, staff_user_id=None, resource_selected_id=None, available_resource_ids=None, asked_capacity=1, **kwargs):*/
+    for (const [key, value] of searchParams.entries()) {
+        params[`${key}`] = encodeURIComponent(value);
+    }
+
     try {
-/*        const params = {
-            'date': date,
-            'asked_capacity': asked_capacity
-        }
-        const response = await rpc('/hbn/appointment/' + encodeURIComponent(appointment_type_id), params);
-        showAvailableTimeSlots(date,response);*/
+        const response = await rpc('/hbn/appointment/' + encodeURIComponent(elements['appointment_type_id'].value) + '/info', params);
+        showBookingForm(response);
     } catch (error) {
         console.log("JSON-RPC Error:", error);
     }
 
-    const button = event.target;
+}
 
+function showBookingForm(response){
+    let html = ejs.render(appointment_form, {
+        'date_locale': response['date_locale'],
+        'asked_capacity': response['asked_capacity'],
+        'location': "Location",
+        'duration': response['duration'],
+        'datetime_str': response['datatime_str'],
+        'duration_str': response['duration_str'],
+        'available_resource_ids': response['available_resource_ids'],
+    })
+
+    document.getElementById('booking-modal-content').innerHTML = html;
 }

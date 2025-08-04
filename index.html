@@ -386,7 +386,7 @@
         <section id="booking" class="text-center">
             <h2>Book an Appointment</h2>
             <div class="container booking">
-                <form id="select-booking-options" class="booking-form">
+                <form id="select-booking-options" class="booking-form" autocomplete="off">
                     <label for="location-select">choose a location:</label>
                     <select class="form-select" name="location" id="location-select" required>
                         <option value="">--select location--</option>
@@ -403,7 +403,7 @@
                     </select>
 
                     <label for="date-select">choose date:</label>
-                    <input class="form-control" name="date" type="text" autocomplete="off" id="date-select" required>
+                    <input class="form-control date-picker" name="date" type="text" id="date-select" inputmode="none" required>
                     <button type="submit" id="get-available-time-slots" class="cta-button">Search</button>
                 </form> 
             </div>
@@ -411,7 +411,7 @@
 
         <div class="modal fade" id="show-available-time-slots" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg">
-                <div id="time-slots-modal-content" class="modal-content">
+                <div id="booking-modal-content" class="modal-content">
                 </div>
             </div>
         </div>
