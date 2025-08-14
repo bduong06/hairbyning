@@ -110,7 +110,16 @@ whenReady().then(() => {
         autohide: true,
         format: "yyyy-mm-dd"
      }); 
-  
+
+     document.getElementById('continue-fb-login').addEventListener('click', function(){
+        FB.login(function(response) {
+            if (response.status === 'connected') {
+                // Logged into your webpage and Facebook.
+            } else {
+                // The person is not logged into your webpage or we are unable to tell. 
+            }
+        },{scope: 'public_profile,email'});
+     });
 });
 
 (async function startOdooApp() {
@@ -136,6 +145,15 @@ whenReady().then(() => {
     }
 
 })();
+
+window.fbAsyncInit = function() {
+    FB.init({
+    appId      : '763714192774133',
+    cookie     : true,                     // Enable cookies to allow the server to access the session.
+    xfbml      : true,                     // Parse social plugins on this webpage.
+    version    : 'v23.0'           // Use this Graph API version for this call.
+    });
+};
 
 
 
@@ -219,7 +237,8 @@ function showAvailableTimeSlots(date, response) {
         autohide: true , 
         datesDisabled: isDateDisabled,
         updateOnBlur: false,
-        format: 'yyyy-mm-dd'
+        format: 'yyyy-mm-dd',
+        defaultViewDate: date
     }); 
 
     document.getElementById('slots-datepicker').addEventListener('changeDate', (event) => {
