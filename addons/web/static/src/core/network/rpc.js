@@ -105,7 +105,9 @@ rpc._rpc = function (url, params, settings) {
         // configure and send request
         request.open("POST", url);
         const headers = settings.headers || {};
-        headers["Content-Type"] = "application/json";
+        if (headers["Content-Type"] === undefined){
+            headers["Content-Type"] = "application/json";
+        } 
         for (let [header, value] of Object.entries(headers)) {
             request.setRequestHeader(header, value);
         }

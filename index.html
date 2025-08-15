@@ -407,6 +407,7 @@
                     <label for="date-select">choose date:</label>
                     <input class="form-control date-picker" name="date" type="text" id="date-select" inputmode="none" required>
                     <button type="submit" id="get-available-time-slots" class="cta-button">Search</button>
+                    <input type="hidden" id="csrf_token" name="csrf_token" value=""/>
                 </form> 
             </div>
         </section> 
@@ -483,8 +484,21 @@
             </div>
             <p>123 Beauty Street, New York, NY | (555) 123-4567</p>
         </footer>
-
-        <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
+<div id="fb-root"></div>
+<script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
+<script>
+  window.fbAsyncInit = function() {
+    FB.init({
+      appId      : '763714192774134',
+      cookie     : true,
+      xfbml      : true,
+      version    : 'v23.0'
+    });
+      
+    FB.AppEvents.logPageView();   
+      
+  };
+</script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
         <script src="js/ejs.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/js/datepicker.min.js"></script>

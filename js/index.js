@@ -113,48 +113,31 @@ whenReady().then(() => {
 
      document.getElementById('continue-fb-login').addEventListener('click', function(){
         FB.login(function(response) {
-            if (response.status === 'connected') {
-                // Logged into your webpage and Facebook.
+            if (response.authResponse) {
+                authSignin(response.authResponse);
             } else {
-                // The person is not logged into your webpage or we are unable to tell. 
+                console.log('User cancelled login or did not fully authorize.');
             }
-        },{scope: 'public_profile,email'});
+        }, {scope: 'email,public_profile'});
      });
 });
 
 (async function startOdooApp() {
 
-/*    try {
-
-        const params = {
-            "login": "admin",
-            "db": "bduongdb",
-            "password": "Odi4ever!"
-        }
-        const response = await rpc('/web/session/authenticate', params);
-        console.log("JSON-RPC Response:", response);
-    } catch (error) {
-        console.log("JSON-RPC Error authenticating:", error.data);
-    }*/
 
     try {
-        const response = await rpc('/hbn/appointment');
-        prepare_selects(response);
+            const settings = {headers: {
+                                withCredentials: true, 
+                                } 
+                            }
+        const response = await rpc('/hbn/appointment', {}, settings);
+        prepare_selects(response.appointment_types);
+        createCsrfToken(response.csrf_token);
     } catch (error) {
         console.log("JSON-RPC Error:", error);
     }
 
 })();
-
-window.fbAsyncInit = function() {
-    FB.init({
-    appId      : '763714192774133',
-    cookie     : true,                     // Enable cookies to allow the server to access the session.
-    xfbml      : true,                     // Parse social plugins on this webpage.
-    version    : 'v23.0'           // Use this Graph API version for this call.
-    });
-};
-
 
 
 // Example starter JavaScript for disabling form submissions if there are invalid fields
@@ -397,4 +380,24 @@ function showBookingForm(response){
     })
 
     document.getElementById('booking-modal-content').innerHTML = html;
+}
+
+async function authSignin(authResponse){
+    var accessToken = authResponse.accessToken;
+    var expiration_time = authResponse.data_access_expiration_time;  
+    var expires_in = authResponse.expiresIn;
+    try {
+        const params = new URLSearchParams();
+        params.append('access_token', encodeURIComponent(accessToken));
+        params.append('data_access_expiration_time', encodeURIComponent(expiration_time));
+        params.append('expires_in', encodeURIComponent(expires_in));
+        params.append('state', JSON.stringify({"d": "hairbyning-devdb", "p": 2, "r": encodeURIComponent('https://localodoo.hairbyning.com')}));
+        const response = await fetch(`/auth_oauth/signin?${params}`);
+    } catch (error) {
+        console.log("JSON-RPC Error:", error);
+    }
+}
+
+function createCsrfToken(csrfToken){
+    document.getElementById('csrf_token').value = csrfToken;
 }
