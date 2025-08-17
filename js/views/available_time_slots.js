@@ -10,6 +10,9 @@ const available_time_slots = `
                     </ol>
                 </nav>
             </div>
+            <div class="col">
+                <div id="login_status"></div>
+            </div>
         </div>
         <div class="row">
             <div class="col-1">

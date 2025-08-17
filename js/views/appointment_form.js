@@ -31,22 +31,23 @@ const appointment_form = `
                 <input type="hidden" name="duration_str" value="<%= duration_str %>">
                 <input type="hidden" name="available_resource_ids" value="<%= available_resource_ids %>">
                 <input type="hidden" name="asked_capacity" value="<%= asked_capacity %>">
+                <input type="hidden" name="id" value="<%= id %>">
                 <div class="row mb-4">
                     <label class="col-sm-3 col-form-label fw-normal" for="name">Full name*</label>
                     <div class="col-sm-9">
-                        <input type="char" class="form-control" name="name" required="1" placeholder="e.g. John Smith">
+                        <input type="char" class="form-control" name="name" required="1" placeholder="e.g. John Smith" value="<%= name %>">
                     </div>
                 </div>
                 <div class="row mb-4">
                     <label class="col-sm-3 col-form-label fw-normal" for="email">Email*</label>
                     <div class="col-sm-9">
-                        <input type="email" class="form-control" name="email" required="1" placeholder="e.g. john.smith@example.com">
+                        <input type="email" class="form-control" name="email" required="1" placeholder="e.g. john.smith@example.com" value="<%= email %>">
                     </div>
                 </div>
                 <div class="row mb-4">
                     <label class="col-sm-3 col-form-label fw-normal" for="phone">Phone number*</label>
                     <div class="col-sm-9">
-                        <input type="tel" class="form-control" name="phone" id="phone_field" required="1" placeholder="e.g. +1(605)691-3277">
+                        <input type="tel" class="form-control" name="phone" id="phone_field" required="1" placeholder="e.g. +1(605)691-3277" value="<%= phone %>">
                         <small class="form-text">
                             <i class="fa fa-lightbulb-o ms-2 me-1"></i>
                             We will use it to remind you of this appointment.

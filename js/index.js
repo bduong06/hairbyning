@@ -34,13 +34,11 @@ whenReady().then(() => {
     });
 
     document.querySelectorAll('#portfolio a').forEach((elm, index) => {
-    elm.addEventListener('click', event => {
-        event.preventDefault();
-
-        galleryCarousel.to(index);
-    })
+        elm.addEventListener('click', event => {
+            event.preventDefault();
+            galleryCarousel.to(index);
+        })
     });
-    
     
     const galModalElm = document.getElementById('galleryModal');
     galModalElm.addEventListener('hide.bs.modal', () => {
@@ -114,7 +112,8 @@ whenReady().then(() => {
      document.getElementById('continue-fb-login').addEventListener('click', function(){
         FB.login(function(response) {
             if (response.authResponse) {
-                authSignin(response.authResponse);
+//                authSignin(response.authResponse);
+//                checkLoginState();
             } else {
                 console.log('User cancelled login or did not fully authorize.');
             }
@@ -122,21 +121,25 @@ whenReady().then(() => {
      });
 });
 
-(async function startOdooApp() {
-
-
+(async function startOdooApp(){
+    window.fbAsyncInit = function() {
+        FB.init({
+            appId      : '763714192774134',
+            cookie     : true,
+            xfbml      : true,
+            version    : 'v23.0'
+        });
+        FB.getLoginStatus(function(response) {   // Called after the JS SDK has been initialized.
+            statusChangeCallback(response);        // Returns the login status.
+        });
+    }; 
+    checkLoginState();
     try {
-            const settings = {headers: {
-                                withCredentials: true, 
-                                } 
-                            }
-        const response = await rpc('/hbn/appointment', {}, settings);
-        prepare_selects(response.appointment_types);
-        createCsrfToken(response.csrf_token);
+        const response = await rpc('/hbn/appointment');
+        prepare_selects(response);
     } catch (error) {
         console.log("JSON-RPC Error:", error);
     }
-
 })();
 
 
@@ -160,6 +163,35 @@ whenReady().then(() => {
   })
 })()*/
 
+function testAPI() {                      // Testing Graph API after login.  See statusChangeCallback() for when this call is made.
+    console.log('Welcome!  Fetching your information.... ');
+    FB.api('/me', function(response) {
+        console.log('Successful login for: ' + response.name);
+        document.getElementById('login_status').innerHTML =
+        'Thanks for logging in, ' + response.name + '!';
+    });
+}
+
+async function checkLoginState() {               // Called when a person is finished with the Login Button.
+    try {
+        const response = await rpc('/web/session/get_session_info');
+            console.log('checkLoginState');
+            console.log(response);
+    } catch (error) {
+        console.log("JSON-RPC Error:", error);
+    }
+}
+
+function statusChangeCallback(response) {  // Called with the results from FB.getLoginStatus().
+    console.log('statusChangeCallback');
+    console.log(response);                   // The current login status of the person.
+    if (response.status === 'connected') {   // Logged into your webpage and Facebook.
+        testAPI();  
+    } else {                                 // Not logged into your webpage or we are unable to tell.
+/*        document.getElementById('login_status').innerHTML = 'Please log ' +
+        'into this webpage.';*/
+    }
+}
 
 function prepare_selects(response) {
 
@@ -254,12 +286,9 @@ function showAvailableTimeSlots(date, response) {
                 document.getElementById('current-slot-date').innerHTML = this.dataset.slotDate;
                 html = ejs.render(requested_date_slots, {requestedDateSlots: JSON.parse(this.dataset.availableSlots) });
                 document.getElementById('available-time-slots-container').innerHTML = html;
-                document.getElementById('available-time-slots-container').querySelectorAll('button').forEach((elm) => (
-                    elm.addEventListener('click', (event) => {
-                        event.preventDefault();
-                        selectTimeSlot(event);
-                    })
-                ))
+                document.getElementById('available-time-slots-container').querySelectorAll('button').forEach( (elm) => {
+                    addEventListener(elm);
+                })
                 tabTrigger.show();
             }
         })
@@ -305,15 +334,31 @@ function showAvailableTimeSlots(date, response) {
         document.getElementById('nav-control-prev').dataset.startIndex = index;
     })
 
-    document.getElementById('available-time-slots-container').querySelectorAll('button').forEach((elm) => (
-        elm.addEventListener('click', (event) => {
-            event.preventDefault();
-            selectTimeSlot(event);
+    document.getElementById('available-time-slots-container').querySelectorAll('button').forEach(
+        (elm) => {
+            addTimeSlotEventListener(elm)
         })
-    ))
 
-    const availableTimeSlotsModal = new bootstrap.Modal('#show-available-time-slots', {keyboard: false});
+    const availableTimeSlotsModal = new bootstrap.Modal('#booking-modal', {keyboard: false});
     availableTimeSlotsModal.show();
+}
+
+function addTimeSlotEventListener(elm){
+    elm.addEventListener('click', (event) => {
+        event.preventDefault();
+        if(checkLoginState()){
+            document.getElementById('continue-login').className = 'container d-none';
+            document.getElementById('btn-continue').className = 'btn btn-primary';
+        } else {
+            document.getElementById('continue-login').className = 'container';
+            document.getElementById('btn-continue').className = 'btn btn-primary d-none';
+        }
+        const urlParameters = event.target.dataset.urlParameters;
+        const contModal = document.getElementById('continue-booking-signin');
+        contModal.addEventListener('hidden.bs.modal', () => {
+            selectTimeSlot(urlParameters);
+        })
+    })
 }
 
 function isDateDisabled(date, viewId, rangeEnd){
@@ -346,29 +391,30 @@ function showAvailableTimeSlotsTabs(tabList, startIndex){
     document.getElementById('nav-control-prev').dataset.startIndex = index;
 }
 
-async function selectTimeSlot(event){
-    event.preventDefault();
+async function selectTimeSlot(urlParameters){
     const elements = document.getElementById('time_slots_form').elements;
-    const searchParams = new URLSearchParams(decodeURIComponent(event.target.dataset.urlParameters));
+    const searchParams = new URLSearchParams(decodeURIComponent(urlParameters));
     let params = {
         "schedule_based_on": encodeURIComponent(elements['schedule_based_on'].value),
         "assign_method": encodeURIComponent(elements['assign_method'].value)
     };
-
     for (const [key, value] of searchParams.entries()) {
         params[`${key}`] = encodeURIComponent(value);
     }
-
     try {
         const response = await rpc('/hbn/appointment/' + encodeURIComponent(elements['appointment_type_id'].value) + '/info', params);
         showBookingForm(response);
     } catch (error) {
         console.log("JSON-RPC Error:", error);
     }
-
 }
 
 function showBookingForm(response){
+    const partner_data = response['partner_data'];
+    const name = partner_data != undefined ? partner_data.name : "";
+    const email = partner_data != undefined ? partner_data.email : "";
+    const phone = partner_data != undefined ? partner_data.phone : "";
+    const id = partner_data != undefined ? partner_data.id : 0;
     let html = ejs.render(appointment_form, {
         'date_locale': response['date_locale'],
         'asked_capacity': response['asked_capacity'],
@@ -377,9 +423,14 @@ function showBookingForm(response){
         'datetime_str': response['datatime_str'],
         'duration_str': response['duration_str'],
         'available_resource_ids': response['available_resource_ids'],
+        'name': name,
+        'email': email,
+        'phone': phone,
+        'id': id
     })
-
     document.getElementById('booking-modal-content').innerHTML = html;
+
+    bootstrap.Modal.getInstance(document.getElementById('booking-modal')).show();
 }
 
 async function authSignin(authResponse){
@@ -391,8 +442,20 @@ async function authSignin(authResponse){
         params.append('access_token', encodeURIComponent(accessToken));
         params.append('data_access_expiration_time', encodeURIComponent(expiration_time));
         params.append('expires_in', encodeURIComponent(expires_in));
-        params.append('state', JSON.stringify({"d": "hairbyning-devdb", "p": 2, "r": encodeURIComponent('https://localodoo.hairbyning.com')}));
-        const response = await fetch(`/auth_oauth/signin?${params}`);
+        params.append('state', JSON.stringify({"d": "bduongdb", "p": 2, "r": encodeURIComponent('https://localodoo.hairbyning.com')}));
+        try {
+            const response = await fetch(`/auth_oauth/signin?${params}`);
+            const contModal = bootstrap.Modal.getInstance(document.getElementById('continue-booking-signin'));
+            if(response.status == '200'){
+                contModal.hide();
+            }
+            else {
+                console.log(response);
+            }
+        } catch (error) {
+            console.log("JSON-RPC Error:", error);
+        }
+
     } catch (error) {
         console.log("JSON-RPC Error:", error);
     }

@@ -38,7 +38,6 @@
                 <h1>Welcome to Hair By Ning</h1>
                 <p>We specialize in hair coloring.  Get the color you want today!</p>
                 <a href="#booking" class="btn btn-primary" role="button">Book an Appointment</a>
-                <button type="button" data-bs-target="#continue-booking-signin" data-bs-toggle="modal" class="btn btn-primary" data-bs-dismiss="modal"><i class="bi bi-facebook"></i> Continue with Facebook</button>
             </div>
         </section>
 
@@ -412,7 +411,7 @@
             </div>
         </section> 
 
-        <div class="modal fade" id="show-available-time-slots" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        <div class="modal fade" id="booking-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg">
                 <div id="booking-modal-content" class="modal-content">
                 </div>
@@ -429,9 +428,12 @@
                         ...
                     </div>
                     <div class="modal-footer">
-                        <button type="button" id="continue-fb-login" data-bs-target="#show-available-time-slots" data-bs-toggle="modal" class="btn btn-primary" data-bs-dismiss="modal"><i class="bi bi-facebook"></i> Continue with Facebook</button>
-                        <button type="button" id="continue-line-login" data-bs-target="#show-available-time-slots" data-bs-toggle="modal" class="btn btn-primary" data-bs-dismiss="modal"><i class="bi bi-line"></i> Continue with Line Chat</button>
-                        <button type="button" data-bs-target="#show-available-time-slots" data-bs-toggle="modal" class="btn btn-primary" data-bs-dismiss="modal">Continue witout signin</button>
+                        <div id="continue-login" class="container">
+                            <button type="button" id="continue-fb-login" class="btn btn-primary btn-facebook btn-login"><i class="bi bi-facebook"></i> Continue with Facebook</button>
+                            <button type="button" id="continue-line-login" class="btn btn-primary btn-line btn-login" data-bs-dismiss="modal"><i class="bi bi-line"></i> Continue with Line Chat</button>
+                            <button type="button" class="btn btn-primary btn-login" data-bs-dismiss="modal">Continue witout signin</button>
+                        </div>
+                        <button type="button" id="btn-continue" class="btn btn-primary" data-bs-dismiss="modal">Continue</button>
                     </div>
                 </div>
             </div>
@@ -484,21 +486,8 @@
             </div>
             <p>123 Beauty Street, New York, NY | (555) 123-4567</p>
         </footer>
-<div id="fb-root"></div>
-<script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
-<script>
-  window.fbAsyncInit = function() {
-    FB.init({
-      appId      : '763714192774134',
-      cookie     : true,
-      xfbml      : true,
-      version    : 'v23.0'
-    });
-      
-    FB.AppEvents.logPageView();   
-      
-  };
-</script>
+        <div id="fb-root"></div>
+        <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
         <script src="js/ejs.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/js/datepicker.min.js"></script>

@@ -179,6 +179,35 @@
             height: auto;
         }
 
+        .bi-facebook {
+            background-color: #3B5998; /* Official Facebook blue */
+        }
+
+        .btn-facebook {
+            background-color: #3B5998; /* Official Facebook blue */
+            border-color: #3B5998; /* Official Facebook blue */
+        }
+
+        .btn-facebook:hover {
+            background-color: #3B5998; /* Official Facebook blue */
+            opacity: .8;
+        }
+
+        .bi-line {
+            background-color: #06C755;
+        }
+
+        .btn-line {
+            background-color: #06C755;
+            border-color: #06C755;
+        }
+
+        .btn-line:hover {
+            background-color: #06C755;
+            border-color: #06C755;
+            opacity: .8;
+        }
+
         /* Footer */
         footer {
             background: #333;
