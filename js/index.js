@@ -23,6 +23,8 @@ function whenReady(fn) {
 
 whenReady().then(() => {
 
+    liff.init({liffId: '2007896254'});
+
     const reviewsCarousel = new bootstrap.Carousel('#reviewsCarousel', {
         ride: 'carousel'
     });
@@ -112,8 +114,20 @@ whenReady().then(() => {
      document.getElementById('continue-fb-login').addEventListener('click', function(){
         FB.login(function(response) {
             if (response.authResponse) {
-//                authSignin(response.authResponse);
+                authSignin(response.authResponse);
 //                checkLoginState();
+            } else {
+                console.log('User cancelled login or did not fully authorize.');
+            }
+        }, {scope: 'email,public_profile'});
+     });
+     document.getElementById('continue-line-login').addEventListener('click', function(){
+        liff.login(function(response) {
+            if (response) {
+            //    authSignin(response.authResponse);
+//                checkLoginState();
+                console.log('liff.login');
+                console.log(response);
             } else {
                 console.log('User cancelled login or did not fully authorize.');
             }
@@ -122,21 +136,9 @@ whenReady().then(() => {
 });
 
 (async function startOdooApp(){
-    window.fbAsyncInit = function() {
-        FB.init({
-            appId      : '763714192774134',
-            cookie     : true,
-            xfbml      : true,
-            version    : 'v23.0'
-        });
-        FB.getLoginStatus(function(response) {   // Called after the JS SDK has been initialized.
-            statusChangeCallback(response);        // Returns the login status.
-        });
-    }; 
-    checkLoginState();
     try {
         const response = await rpc('/hbn/appointment');
-        prepare_selects(response);
+        prepare_selects(response.appointment_types);
     } catch (error) {
         console.log("JSON-RPC Error:", error);
     }
@@ -175,21 +177,21 @@ function testAPI() {                      // Testing Graph API after login.  See
 async function checkLoginState() {               // Called when a person is finished with the Login Button.
     try {
         const response = await rpc('/web/session/get_session_info');
-            console.log('checkLoginState');
-            console.log(response);
+        statusChangeCallback(response.name);
     } catch (error) {
-        console.log("JSON-RPC Error:", error);
+        statusChangeCallback(null);
     }
 }
 
-function statusChangeCallback(response) {  // Called with the results from FB.getLoginStatus().
-    console.log('statusChangeCallback');
-    console.log(response);                   // The current login status of the person.
-    if (response.status === 'connected') {   // Logged into your webpage and Facebook.
-        testAPI();  
-    } else {                                 // Not logged into your webpage or we are unable to tell.
-/*        document.getElementById('login_status').innerHTML = 'Please log ' +
-        'into this webpage.';*/
+function statusChangeCallback(name) {  // Called with the results from FB.getLoginStatus().
+    if(name){
+        document.getElementById('login_status').innerHTML = name;
+        document.getElementById('continue-login').className = "container d-none";
+        document.getElementById('btn-continue').className = "container";
+    } else {
+        document.getElementById('login_status').innerHTML = 'Sign In';
+        document.getElementById('continue-login').className = "container";
+        document.getElementById('btn-continue').className = "container d-none";
     }
 }
 
@@ -334,6 +336,7 @@ function showAvailableTimeSlots(date, response) {
         document.getElementById('nav-control-prev').dataset.startIndex = index;
     })
 
+    checkLoginState();
     document.getElementById('available-time-slots-container').querySelectorAll('button').forEach(
         (elm) => {
             addTimeSlotEventListener(elm)
@@ -346,16 +349,10 @@ function showAvailableTimeSlots(date, response) {
 function addTimeSlotEventListener(elm){
     elm.addEventListener('click', (event) => {
         event.preventDefault();
-        if(checkLoginState()){
-            document.getElementById('continue-login').className = 'container d-none';
-            document.getElementById('btn-continue').className = 'btn btn-primary';
-        } else {
-            document.getElementById('continue-login').className = 'container';
-            document.getElementById('btn-continue').className = 'btn btn-primary d-none';
-        }
         const urlParameters = event.target.dataset.urlParameters;
         const contModal = document.getElementById('continue-booking-signin');
-        contModal.addEventListener('hidden.bs.modal', () => {
+        contModal.addEventListener('hidden.bs.modal', (event) => {
+            event.preventDefault();
             selectTimeSlot(urlParameters);
         })
     })
@@ -413,7 +410,7 @@ function showBookingForm(response){
     const partner_data = response['partner_data'];
     const name = partner_data != undefined ? partner_data.name : "";
     const email = partner_data != undefined ? partner_data.email : "";
-    const phone = partner_data != undefined ? partner_data.phone : "";
+    const phone = ((partner_data != undefined) && (partner_data.phone)) ? partner_data.phone : "";
     const id = partner_data != undefined ? partner_data.id : 0;
     let html = ejs.render(appointment_form, {
         'date_locale': response['date_locale'],
@@ -442,12 +439,15 @@ async function authSignin(authResponse){
         params.append('access_token', encodeURIComponent(accessToken));
         params.append('data_access_expiration_time', encodeURIComponent(expiration_time));
         params.append('expires_in', encodeURIComponent(expires_in));
-        params.append('state', JSON.stringify({"d": "bduongdb", "p": 2, "r": encodeURIComponent('https://localodoo.hairbyning.com')}));
+        params.append('state', JSON.stringify({"d": "hairbyning-devdb", "p": 2, "r": encodeURIComponent('https://localodoo.hairbyning.com')}));
+        params.append('no_redirect', true);
         try {
             const response = await fetch(`/auth_oauth/signin?${params}`);
             const contModal = bootstrap.Modal.getInstance(document.getElementById('continue-booking-signin'));
             if(response.status == '200'){
                 contModal.hide();
+                console.log('auth_oauth/signin');
+                console.log(response);
             }
             else {
                 console.log(response);

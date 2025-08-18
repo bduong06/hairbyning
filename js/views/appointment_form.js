@@ -1,8 +1,8 @@
 const appointment_form = `
 <div class="modal-header">
-    <div class="conatainer">
+    <div class="container">
         <div class="row">
-            <div class="col">
+            <div class="col align-items-start">
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="#">Home</a></li>
@@ -10,6 +10,9 @@ const appointment_form = `
                         <li class="breadcrumb-item active" aria-current="page">Details</li>
                     </ol>
                 </nav>
+            </div>
+            <div class="col align-items-end">
+                <div id="login_status"></div>
             </div>
         </div>
     </div>
@@ -33,20 +36,20 @@ const appointment_form = `
                 <input type="hidden" name="asked_capacity" value="<%= asked_capacity %>">
                 <input type="hidden" name="id" value="<%= id %>">
                 <div class="row mb-4">
-                    <label class="col-sm-3 col-form-label fw-normal" for="name">Full name*</label>
                     <div class="col-sm-9">
+                        <label class="col-sm-3 col-form-label fw-normal" for="name">Full name*</label>
                         <input type="char" class="form-control" name="name" required="1" placeholder="e.g. John Smith" value="<%= name %>">
                     </div>
                 </div>
                 <div class="row mb-4">
-                    <label class="col-sm-3 col-form-label fw-normal" for="email">Email*</label>
                     <div class="col-sm-9">
+                        <label class="col-sm-3 col-form-label fw-normal" for="email">Email*</label>
                         <input type="email" class="form-control" name="email" required="1" placeholder="e.g. john.smith@example.com" value="<%= email %>">
                     </div>
                 </div>
                 <div class="row mb-4">
-                    <label class="col-sm-3 col-form-label fw-normal" for="phone">Phone number*</label>
                     <div class="col-sm-9">
+                        <label class="col-sm-3 col-form-label fw-normal" for="phone">Phone number*</label>
                         <input type="tel" class="form-control" name="phone" id="phone_field" required="1" placeholder="e.g. +1(605)691-3277" value="<%= phone %>">
                         <small class="form-text">
                             <i class="fa fa-lightbulb-o ms-2 me-1"></i>
