@@ -9,21 +9,11 @@ import {
 import available_time_slots from "./views/available_time_slots.js";
 import requested_date_slots  from "./views/requested_date_slots.js";
 import appointment_form  from "./views/appointment_form.js";
-
-function whenReady(fn) {
-    return new Promise(function (resolve) {
-        if (document.readyState !== "loading") {
-            resolve(true);
-        }
-        else {
-            document.addEventListener("DOMContentLoaded", resolve, false);
-        }
-    }).then(fn || function () { });
-}
+import whenReady from "./whenready.js";
 
 whenReady().then(() => {
 
-    liff.init({liffId: '2007896254'});
+    liff.init({liffId: '2007896254-Dkr9Yr56'});
 
     const reviewsCarousel = new bootstrap.Carousel('#reviewsCarousel', {
         ride: 'carousel'

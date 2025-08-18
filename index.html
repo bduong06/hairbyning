@@ -431,12 +431,19 @@
                     <div class="modal-footer">
                         <div id="continue-login" class="container">
                             <button type="button" id="continue-fb-login" class="btn btn-primary btn-facebook btn-login"><i class="bi bi-facebook"></i> Continue with Facebook</button>
-                            <button type="button" id="continue-line-login" class="btn btn-primary btn-line btn-login" data-bs-dismiss="modal"><i class="bi bi-line"></i> Continue with Line Chat</button>
+                            <button type="button" id="continue-line-login" data-bs-target="#liffLoginModal" data-bs-toggle="modal" class="btn btn-primary btn-line btn-login" data-bs-dismiss="modal"><i class="bi bi-line"></i> Continue with Line Chat</button>
                             <button type="button" class="btn btn-primary btn-login" data-bs-dismiss="modal">Continue witout signin</button>
                         </div>
                         <button type="button" id="btn-continue" class="btn btn-primary" data-bs-dismiss="modal">Continue</button>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="liffLoginModal" tabindex="-1" aria-labelledby="liffLoginModal" aria-hidden="true">
+            <div class="modal-content">
+                <span class="close-button">&times;</span>
+                <iframe id="modalIframe" src="/liff/index.html" frameborder="0"></iframe>
             </div>
         </div>
 
