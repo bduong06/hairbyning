@@ -11,6 +11,26 @@ import requested_date_slots  from "./views/requested_date_slots.js";
 import appointment_form  from "./views/appointment_form.js";
 import whenReady from "./whenready.js";
 
+(async function startBookingApp(){
+
+    if(sessionStorage.getItem('redirected')){
+        const elements = document.getElementById('select-booking-options').elements;
+        elements['location'].value = sessionStorage.getItem('location');
+        elements['service'].value = sessionStorage.getItem('service');
+        elements['capacity'].value = sessionStorage.getItem('capacity');
+        elements['date'].value = sessionStorage.getItem('date');
+        elements['csrf_token'].value = sessionStorage.getItem('csrf_token');
+    } else {
+        try {
+            const response = await rpc('/hbn/appointment');
+            //prepare_selects(response.appointment_types);
+            prepare_selects(response);
+        } catch (error) {
+            console.log("JSON-RPC Error:", error);
+        }
+    }
+})();
+
 whenReady().then(() => {
 
     liff.init({liffId: '2007896254-Dkr9Yr56'});
@@ -124,15 +144,6 @@ whenReady().then(() => {
         }, {scope: 'email,public_profile'});
      });
 });
-
-(async function startOdooApp(){
-    try {
-        const response = await rpc('/hbn/appointment');
-        prepare_selects(response.appointment_types);
-    } catch (error) {
-        console.log("JSON-RPC Error:", error);
-    }
-})();
 
 
 // Example starter JavaScript for disabling form submissions if there are invalid fields
@@ -341,9 +352,9 @@ function addTimeSlotEventListener(elm){
         event.preventDefault();
         const urlParameters = event.target.dataset.urlParameters;
         const contModal = document.getElementById('continue-booking-signin');
-        contModal.addEventListener('hidden.bs.modal', (event) => {
+        contModal.addEventListener('shown.bs.modal', (event) => {
             event.preventDefault();
-            selectTimeSlot(urlParameters);
+            saveCurrentState(urlParameters);
         })
     })
 }
@@ -378,7 +389,7 @@ function showAvailableTimeSlotsTabs(tabList, startIndex){
     document.getElementById('nav-control-prev').dataset.startIndex = index;
 }
 
-async function selectTimeSlot(urlParameters){
+function saveCurrentState(urlParameters){
     const elements = document.getElementById('time_slots_form').elements;
     const searchParams = new URLSearchParams(decodeURIComponent(urlParameters));
     let params = {
@@ -388,8 +399,22 @@ async function selectTimeSlot(urlParameters){
     for (const [key, value] of searchParams.entries()) {
         params[`${key}`] = encodeURIComponent(value);
     }
+    let url = '/hbn/appointment/' + encodeURIComponent(elements['appointment_type_id'].value) + '/info';
+    const select_elements = document.getElementById('select-booking-options').elements;
+    localStorage.setItem('location', select_elements['location']);
+    localStorage.setItem('service', select_elements['service']);
+    localStorage.setItem('capacity', select_elements['capacity']);
+    localStorage.setItem('csrf_token', select_elements['csrf_token']);
+    localStorage.setItem('params', JSON.stringify(params));
+    localStorage.setItem('url', url);
+    localStorage.setItem('redirected', true);
+}
+
+async function getBookingForm(){
+    let params = JSON.parse(localStorage.getItem('params'));
+    let url = localStorage.getItem('url');
     try {
-        const response = await rpc('/hbn/appointment/' + encodeURIComponent(elements['appointment_type_id'].value) + '/info', params);
+        const response = await rpc(url, params);
         showBookingForm(response);
     } catch (error) {
         console.log("JSON-RPC Error:", error);
@@ -429,7 +454,8 @@ async function authSignin(authResponse){
         params.append('access_token', encodeURIComponent(accessToken));
         params.append('data_access_expiration_time', encodeURIComponent(expiration_time));
         params.append('expires_in', encodeURIComponent(expires_in));
-        params.append('state', JSON.stringify({"d": "hairbyning-devdb", "p": 2, "r": encodeURIComponent('https://localodoo.hairbyning.com')}));
+        //params.append('state', JSON.stringify({"d": "hairbyning-devdb", "p": 2, "r": encodeURIComponent('https://localodoo.hairbyning.com')}));
+        params.append('state', JSON.stringify({"d": "bduongdb", "p": 2, "r": encodeURIComponent('https://localodoo.hairbyning.com')}));
         params.append('no_redirect', true);
         try {
             const response = await fetch(`/auth_oauth/signin?${params}`);

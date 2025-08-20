@@ -95,5 +95,4 @@ const available_time_slots = `
 <div class="modal-footer">
     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 </div>`;
-
 export default available_time_slots;

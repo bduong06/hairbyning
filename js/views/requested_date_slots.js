@@ -26,5 +26,4 @@ const requested_date_slots = `
    <% } %>
    <% col++; %>
 <% } %>`;
-
 export default requested_date_slots; 
