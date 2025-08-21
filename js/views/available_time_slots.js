@@ -1,19 +1,5 @@
 const available_time_slots = `
-<div class="modal-header">
-    <div class="conatainer">
-        <div class="row">
-            <div class="col">
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="#">Home</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">Select</li>
-                    </ol>
-                </nav>
-            </div>
-            <div class="col">
-                <div id="login_status"></div>
-            </div>
-        </div>
+    <div class="container-fluid text-center">
         <div class="row">
             <div class="col-1">
                 <button id="nav-control-prev" data-start-index="<%= startIndex %>" class="nav-link" type="button" role="tab">&lt</button>
@@ -42,10 +28,6 @@ const available_time_slots = `
                 <input id="slots-datepicker" class="form-control date-picker" name="date" type="text" autocomplete="off" readonly="true">
             </div>
         </div>
-    </div>
-</div>
-<div class="modal-body">
-    <div class="container-fluid text-center">
         <div id="booking-details-row" class="row">
             <div class="col">
                 <h3>Booking Details</h3>
@@ -90,9 +72,5 @@ const available_time_slots = `
             <% col++; %>
             <% } %>
         </div>
-    </div>
-</div>
-<div class="modal-footer">
-    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-</div>`;
+    </div>`;
 export default available_time_slots;

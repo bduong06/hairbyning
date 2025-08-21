@@ -11,23 +11,20 @@ import requested_date_slots  from "./views/requested_date_slots.js";
 import appointment_form  from "./views/appointment_form.js";
 import whenReady from "./whenready.js";
 
+const NAMESPACE = "HBN";
+
 (async function startBookingApp(){
 
-    if(sessionStorage.getItem('redirected')){
-        const elements = document.getElementById('select-booking-options').elements;
-        elements['location'].value = sessionStorage.getItem('location');
-        elements['service'].value = sessionStorage.getItem('service');
-        elements['capacity'].value = sessionStorage.getItem('capacity');
-        elements['date'].value = sessionStorage.getItem('date');
-        elements['csrf_token'].value = sessionStorage.getItem('csrf_token');
-    } else {
-        try {
-            const response = await rpc('/hbn/appointment');
-            //prepare_selects(response.appointment_types);
-            prepare_selects(response);
-        } catch (error) {
-            console.log("JSON-RPC Error:", error);
-        }
+    if(readFromStorage('redirected')){
+        getBookingForm();
+    }
+
+    try {
+        const response = await rpc('/hbn/appointment');
+        prepare_selects(response.appointment_types);
+        //prepare_selects(response);
+    } catch (error) {
+        console.log("JSON-RPC Error:", error);
     }
 })();
 
@@ -108,7 +105,7 @@ whenReady().then(() => {
                 'asked_capacity': encodeURIComponent(asked_capacity)
             }
             const response = await rpc('/hbn/appointment/' + encodeURIComponent(serviceSelect.value), params);
-            showAvailableTimeSlots(date,response);
+            showAvailableTimeSlots(date,response.appointment);
         } catch (error) {
             console.log("JSON-RPC Error:", error);
         }
@@ -131,7 +128,7 @@ whenReady().then(() => {
             }
         }, {scope: 'email,public_profile'});
      });
-     document.getElementById('continue-line-login').addEventListener('click', function(){
+/*     document.getElementById('continue-line-login').addEventListener('click', function(){
         liff.login(function(response) {
             if (response) {
             //    authSignin(response.authResponse);
@@ -142,7 +139,7 @@ whenReady().then(() => {
                 console.log('User cancelled login or did not fully authorize.');
             }
         }, {scope: 'email,public_profile'});
-     });
+     });*/
 });
 
 
@@ -223,6 +220,14 @@ function prepare_selects(response) {
         }
     }
 
+    if(readFromStorage('redirected')){
+        const select_elements = document.getElementById('select-booking-options').elements;
+        select_elements['location'].value = readFromStorage('location');
+        select_elements['service'].value = readFromStorage('service');
+        select_elements['capacity'].value = readFromStorage('capacity');
+        select_elements['date'].value = readFromStorage('date');
+        document.getElementById('booking').scrollIntoView();
+    }
 }
 
 function showAvailableTimeSlots(date, response) {
@@ -247,7 +252,7 @@ function showAvailableTimeSlots(date, response) {
         startIndex: startIndex
     })
 
-    document.getElementById('booking-modal-content').innerHTML = html;
+    document.getElementById('booking-modal-body').innerHTML = html;
 
     const elem = document.getElementById('slots-datepicker');
     const datepicker = new Datepicker(elem, {
@@ -336,13 +341,11 @@ function showAvailableTimeSlots(date, response) {
         elm.dataset.startIndex = index;
         document.getElementById('nav-control-prev').dataset.startIndex = index;
     })
-
     checkLoginState();
     document.getElementById('available-time-slots-container').querySelectorAll('button').forEach(
         (elm) => {
             addTimeSlotEventListener(elm)
         })
-
     const availableTimeSlotsModal = new bootstrap.Modal('#booking-modal', {keyboard: false});
     availableTimeSlotsModal.show();
 }
@@ -353,9 +356,24 @@ function addTimeSlotEventListener(elm){
         const urlParameters = event.target.dataset.urlParameters;
         const contModal = document.getElementById('continue-booking-signin');
         contModal.addEventListener('shown.bs.modal', (event) => {
-            event.preventDefault();
-            saveCurrentState(urlParameters);
+            if(document.getElementById('btn-continue').classList.contains('d-none'))
+            {
+              saveCurrentState(urlParameters);
+            } 
         })
+        const hiddenHandler = (event) => {
+            if(!document.getElementById('btn-continue').classList.contains('d-none'))
+            {
+                selectTimeSlot(urlParameters);
+            } 
+        }
+        contModal.addEventListener('hidden.bs.modal', hiddenHandler);
+        document.getElementById('btn-continue-cancel').addEventListener('click', function(event){
+            event.preventDefault();
+            contModal.removeEventListener('hidden.bs.modal', hiddenHandler);
+            clearStorage(); 
+        })
+
     })
 }
 
@@ -401,18 +419,18 @@ function saveCurrentState(urlParameters){
     }
     let url = '/hbn/appointment/' + encodeURIComponent(elements['appointment_type_id'].value) + '/info';
     const select_elements = document.getElementById('select-booking-options').elements;
-    localStorage.setItem('location', select_elements['location']);
-    localStorage.setItem('service', select_elements['service']);
-    localStorage.setItem('capacity', select_elements['capacity']);
-    localStorage.setItem('csrf_token', select_elements['csrf_token']);
-    localStorage.setItem('params', JSON.stringify(params));
-    localStorage.setItem('url', url);
-    localStorage.setItem('redirected', true);
+    writeToStorage('location', select_elements['location'].value);
+    writeToStorage('service', select_elements['service'].value);
+    writeToStorage('capacity', select_elements['capacity'].value);
+    writeToStorage('date', select_elements['date'].value);
+    writeToStorage('params', JSON.stringify(params));
+    writeToStorage('url', url);
+    writeToStorage('redirected', true);
 }
 
 async function getBookingForm(){
-    let params = JSON.parse(localStorage.getItem('params'));
-    let url = localStorage.getItem('url');
+    let params = JSON.parse(readFromStorage('params'));
+    let url = readFromStorage('url');
     try {
         const response = await rpc(url, params);
         showBookingForm(response);
@@ -426,23 +444,47 @@ function showBookingForm(response){
     const name = partner_data != undefined ? partner_data.name : "";
     const email = partner_data != undefined ? partner_data.email : "";
     const phone = ((partner_data != undefined) && (partner_data.phone)) ? partner_data.phone : "";
-    const id = partner_data != undefined ? partner_data.id : 0;
     let html = ejs.render(appointment_form, {
         'date_locale': response['date_locale'],
         'asked_capacity': response['asked_capacity'],
         'location': "Location",
         'duration': response['duration'],
-        'datetime_str': response['datatime_str'],
+        'datetime_str': response['datetime_str'],
         'duration_str': response['duration_str'],
         'available_resource_ids': response['available_resource_ids'],
         'name': name,
         'email': email,
         'phone': phone,
-        'id': id
+        'id': response['appointment_type_id'],
+        'csrf_token': response['csrf_token']
     })
-    document.getElementById('booking-modal-content').innerHTML = html;
+    document.getElementById('booking-modal-body').innerHTML = html;
+    document.getElementById('booking-modal-cancel').addEventListener('click', function(event){
+        event.preventDefault();
+        clearStorage();
+    })
+    document.getElementById('confirm-booking').addEventListener('click', async function(event){
+        event.preventDefault();
+        const elements = document.getElementById('booking-form').elements;
+        try {
+            const params = {};
+            for(const input of elements){
+                if(input.name.length > 0){
+                    params[`${input.name}`] = input.value;
+                }
+            }
+            let url = `/hbn/appointment/${params.id}/submit?csrf_token=${params.csrf_token}`;
 
-    bootstrap.Modal.getInstance(document.getElementById('booking-modal')).show();
+           const response = await rpc(url, params);
+           console.log('submit');
+           console.log(response);
+ //           showBookingForm(response);
+        } catch (error) {
+            console.log("JSON-RPC Error:", error);
+        }
+    })
+
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('booking-modal')).show();
 }
 
 async function authSignin(authResponse){
@@ -455,7 +497,7 @@ async function authSignin(authResponse){
         params.append('data_access_expiration_time', encodeURIComponent(expiration_time));
         params.append('expires_in', encodeURIComponent(expires_in));
         //params.append('state', JSON.stringify({"d": "hairbyning-devdb", "p": 2, "r": encodeURIComponent('https://localodoo.hairbyning.com')}));
-        params.append('state', JSON.stringify({"d": "bduongdb", "p": 2, "r": encodeURIComponent('https://localodoo.hairbyning.com')}));
+        params.append('state', JSON.stringify({"d": "hairbyning-devdb", "p": 2, "r": encodeURIComponent('https://localodoo.hairbyning.com')}));
         params.append('no_redirect', true);
         try {
             const response = await fetch(`/auth_oauth/signin?${params}`);
@@ -479,4 +521,47 @@ async function authSignin(authResponse){
 
 function createCsrfToken(csrfToken){
     document.getElementById('csrf_token').value = csrfToken;
+}
+
+async function selectTimeSlot(urlParameters){
+    const elements = document.getElementById('time_slots_form').elements;
+    const searchParams = new URLSearchParams(decodeURIComponent(urlParameters));
+    let params = {
+        "schedule_based_on": encodeURIComponent(elements['schedule_based_on'].value),
+        "assign_method": encodeURIComponent(elements['assign_method'].value)
+    };
+    for (const [key, value] of searchParams.entries()) {
+        params[`${key}`] = encodeURIComponent(value);
+    }
+    try {
+        const response = await rpc('/hbn/appointment/' + encodeURIComponent(elements['appointment_type_id'].value) + '/info', params);
+        showBookingForm(response);
+    } catch (error) {
+        console.log("JSON-RPC Error:", error);
+    }
+}
+
+ 
+function writeToStorage(key, value) {
+  const serializedData = localStorage.getItem(NAMESPACE);
+  const data = serializedData ? JSON.parse(serializedData) : {};
+  data[key] = value;
+  localStorage.setItem(NAMESPACE, JSON.stringify(data));
+}
+ 
+function readFromStorage(key) {
+  const serializedData = localStorage.getItem(NAMESPACE);
+  const data = JSON.parse(serializedData);
+  return data ? data[key] : undefined;
+}
+
+function clearStorage() {
+  localStorage.setItem(NAMESPACE, JSON.stringify({}));
+}
+ 
+function removeItem(key) {
+  const serializedData = localStorage.getItem(NAMESPACE);
+  const data = serializedData ? JSON.parse(serializedData) : {};
+  delete data[key];
+  localStorage.setItem(NAMESPACE, JSON.stringify(data));
 }

@@ -1,23 +1,4 @@
 const appointment_form = `
-<div class="modal-header">
-    <div class="container">
-        <div class="row">
-            <div class="col align-items-start">
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="#">Home</a></li>
-                        <li class="breadcrumb-item"><a href="#">Select</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">Details</li>
-                    </ol>
-                </nav>
-            </div>
-            <div class="col align-items-end">
-                <div id="login_status"></div>
-            </div>
-        </div>
-    </div>
-</div>
-<div class="modal-body">
     <div class="container-fluid text-center">
         <div id="booking-details-row" class="row">
             <div class="col">
@@ -35,6 +16,7 @@ const appointment_form = `
                 <input type="hidden" name="available_resource_ids" value="<%= available_resource_ids %>">
                 <input type="hidden" name="asked_capacity" value="<%= asked_capacity %>">
                 <input type="hidden" name="id" value="<%= id %>">
+                <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
                 <div class="row mb-4">
                     <div class="col-sm-9">
                         <label class="col-sm-3 col-form-label fw-normal" for="name">Full name*</label>
@@ -58,16 +40,11 @@ const appointment_form = `
                     </div>
                 </div>
                 <div class="my-3 pt-3">
-                    <div class="o_not_editable text-end">
-                        <button type="button" class="btn btn-primary o_appointment_form_confirm_btn">Confirm Appointment</button>
+                    <div class="text-end">
+                        <button type="submit" id="confirm-booking" class="btn btn-primary">Confirm Appointment</button>
                     </div>
                 </div>
             </form>  
         </div>
-    </div>
-</div>
-<div class="modal-footer">
-    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-</div>`;
-
+    </div>`;
 export default appointment_form;

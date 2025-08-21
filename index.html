@@ -391,13 +391,35 @@
                     <label for="date-select">choose date:</label>
                     <input class="form-control date-picker" name="date" type="text" id="date-select" inputmode="none" required>
                     <button type="submit" id="get-available-time-slots" class="cta-button">Search</button>
-                    <input type="hidden" id="csrf_token" name="csrf_token" value=""/>
                 </form> 
             </div>
         </section> 
         <div class="modal fade" id="booking-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg">
                 <div id="booking-modal-content" class="modal-content">
+                    <div class="modal-header">
+                        <div class="container">
+                            <div class="row">
+                                <div class="col align-items-start">
+                                    <nav aria-label="breadcrumb">
+                                        <ol class="breadcrumb">
+                                            <li class="breadcrumb-item"><a href="#">Home</a></li>
+                                            <li class="breadcrumb-item"><a href="#">Select</a></li>
+                                            <li class="breadcrumb-item active" aria-current="page">Details</li>
+                                        </ol>
+                                    </nav>
+                                </div>
+                                <div class="col align-items-end">
+                                    <div class="text-end" id="login_status"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="booking-modal-body" class="modal-body">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" id="booking-modal-cancel" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -413,10 +435,14 @@
                     <div class="modal-footer">
                         <div id="continue-login" class="container">
                             <button type="button" id="continue-fb-login" class="btn btn-primary btn-facebook btn-login"><i class="bi bi-facebook"></i> Continue with Facebook</button>
-                            <button type="button" id="continue-line-login" data-bs-target="#liffLoginModal" data-bs-toggle="modal" class="btn btn-primary btn-line btn-login" data-bs-dismiss="modal"><i class="bi bi-line"></i> Continue with Line Chat</button>
+<!--                            <button type="button" id="continue-line-login" data-bs-target="#liffLoginModal" data-bs-toggle="modal" class="btn btn-primary btn-line btn-login" data-bs-dismiss="modal"><i class="bi bi-line"></i> Continue with Line Chat</button>-->
+                            <a class="btn btn-primary btn-line btn-login" href="https://access.line.me/oauth2/v2.1/authorize?response_type=code&amp;client_id=2007896254&amp;redirect_uri=https%3A%2F%2Flocal.hairbyning.com%2Fauth_oauth%2Fsignin&amp;scope=openid+profile+email&amp;state=%7B%22d%22%3A+%22hairbyning-devdb%22,+%22p%22%3A+5,+%22r%22%3A+%22https%253A%252F%252Flocal.hairbyning.com%252Fweb%22%7D">
+                                <i class="bi bi-line"></i> Log in with LINE
+                            </a>     
                             <button type="button" class="btn btn-primary btn-login" data-bs-dismiss="modal">Continue witout signin</button>
                         </div>
-                        <button type="button" id="btn-continue" class="btn btn-primary" data-bs-dismiss="modal">Continue</button>
+                            <button type="button" id="btn-continue" class="btn btn-primary" data-bs-dismiss="modal">Continue</button>
+                            <button type="button" id="btn-continue-cancel" class="btn btn-primary" data-bs-dismiss="modal" aria-label="Cancel">Cancel</button>
                     </div>
                 </div>
             </div>
