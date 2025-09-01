@@ -12,6 +12,9 @@ import appointment_form  from "./views/appointment_form.js";
 import whenReady from "./whenready.js";
 
 const NAMESPACE = "HBN";
+const spinner = document.getElementById('spinner');
+const bookingModal = new bootstrap.Modal('#booking-modal', {keyboard: false});
+const bookingModalContent = document.getElementById('booking-modal-body-content');
 
 (async function startBookingApp(){
 
@@ -30,7 +33,8 @@ const NAMESPACE = "HBN";
 
 whenReady().then(() => {
 
-    liff.init({liffId: '2007896254-Dkr9Yr56'});
+//    liff.init({liffId: '2007896254-Dkr9Yr56'});
+
 
     const reviewsCarousel = new bootstrap.Carousel('#reviewsCarousel', {
         ride: 'carousel'
@@ -93,12 +97,13 @@ whenReady().then(() => {
 
     document.getElementById('select-booking-options').addEventListener("submit", async function(event) {
         event.preventDefault();
-
-//        const form = document.getElementById('select-booking-options');
         const formElements = this.elements;
         const serviceSelect = formElements["service"];
         const date = formElements["date"].value;
         const asked_capacity = formElements["capacity"].value;
+        spinner.classList.remove('d-none');
+        bookingModalContent.innerHTML = '';
+        bookingModal.show();
         try {
             const params = {
                 'date': encodeURIComponent(date),
@@ -106,7 +111,9 @@ whenReady().then(() => {
             }
             const response = await rpc('/hbn/appointment/' + encodeURIComponent(serviceSelect.value), params);
             showAvailableTimeSlots(date,response.appointment);
+            spinner.classList.add('d-none');
         } catch (error) {
+            spinner.classList.add('d-none');
             console.log("JSON-RPC Error:", error);
         }
     });
@@ -128,6 +135,7 @@ whenReady().then(() => {
             }
         }, {scope: 'email,public_profile'});
      });
+
 /*     document.getElementById('continue-line-login').addEventListener('click', function(){
         liff.login(function(response) {
             if (response) {
@@ -252,7 +260,7 @@ function showAvailableTimeSlots(date, response) {
         startIndex: startIndex
     })
 
-    document.getElementById('booking-modal-body').innerHTML = html;
+    bookingModalContent.innerHTML = html;
 
     const elem = document.getElementById('slots-datepicker');
     const datepicker = new Datepicker(elem, {
@@ -346,8 +354,6 @@ function showAvailableTimeSlots(date, response) {
         (elm) => {
             addTimeSlotEventListener(elm)
         })
-    const availableTimeSlotsModal = new bootstrap.Modal('#booking-modal', {keyboard: false});
-    availableTimeSlotsModal.show();
 }
 
 function addTimeSlotEventListener(elm){
@@ -356,20 +362,21 @@ function addTimeSlotEventListener(elm){
         const urlParameters = event.target.dataset.urlParameters;
         const contModal = document.getElementById('continue-booking-signin');
         contModal.addEventListener('shown.bs.modal', (event) => {
-            if(document.getElementById('btn-continue').classList.contains('d-none'))
-            {
+            if(document.getElementById('btn-continue').classList.contains('d-none')){
               saveCurrentState(urlParameters);
             } 
+            document.getElementById('continue-no-login').addEventListener('click', function(){
+                clearStorage(); 
+                selectTimeSlot(urlParameters);
+            })
         })
         const hiddenHandler = (event) => {
-            if(!document.getElementById('btn-continue').classList.contains('d-none'))
-            {
+            if(!document.getElementById('btn-continue').classList.contains('d-none')) {
                 selectTimeSlot(urlParameters);
             } 
         }
         contModal.addEventListener('hidden.bs.modal', hiddenHandler);
         document.getElementById('btn-continue-cancel').addEventListener('click', function(event){
-            event.preventDefault();
             contModal.removeEventListener('hidden.bs.modal', hiddenHandler);
             clearStorage(); 
         })
@@ -431,10 +438,15 @@ function saveCurrentState(urlParameters){
 async function getBookingForm(){
     let params = JSON.parse(readFromStorage('params'));
     let url = readFromStorage('url');
+    bookingModalContent.innerHTML = '';
+    spinner.classList.remove('d-none');
+    bookingModal.show();
     try {
         const response = await rpc(url, params);
         showBookingForm(response);
+        spinner.classList.add('d-none');
     } catch (error) {
+        spinner.classList.add('d-none');
         console.log("JSON-RPC Error:", error);
     }
 }
@@ -458,12 +470,12 @@ function showBookingForm(response){
         'id': response['appointment_type_id'],
         'csrf_token': response['csrf_token']
     })
-    document.getElementById('booking-modal-body').innerHTML = html;
+    bookingModalContent.innerHTML = html;
     document.getElementById('booking-modal-cancel').addEventListener('click', function(event){
         event.preventDefault();
         clearStorage();
     })
-    document.getElementById('confirm-booking').addEventListener('click', async function(event){
+    document.getElementById('booking-form').addEventListener('submit', async function(event){
         event.preventDefault();
         const elements = document.getElementById('booking-form').elements;
         try {
@@ -473,7 +485,7 @@ function showBookingForm(response){
                     params[`${input.name}`] = input.value;
                 }
             }
-            let url = `/hbn/appointment/${params.id}/submit?csrf_token=${params.csrf_token}`;
+            let url = `/hbn/appointment/${params.id}/submit`;
 
            const response = await rpc(url, params);
            console.log('submit');
@@ -483,8 +495,6 @@ function showBookingForm(response){
             console.log("JSON-RPC Error:", error);
         }
     })
-
-    bootstrap.Modal.getOrCreateInstance(document.getElementById('booking-modal')).show();
 }
 
 async function authSignin(authResponse){
@@ -496,8 +506,8 @@ async function authSignin(authResponse){
         params.append('access_token', encodeURIComponent(accessToken));
         params.append('data_access_expiration_time', encodeURIComponent(expiration_time));
         params.append('expires_in', encodeURIComponent(expires_in));
-        //params.append('state', JSON.stringify({"d": "hairbyning-devdb", "p": 2, "r": encodeURIComponent('https://localodoo.hairbyning.com')}));
-        params.append('state', JSON.stringify({"d": "hairbyning-devdb", "p": 2, "r": encodeURIComponent('https://localodoo.hairbyning.com')}));
+        //params.append('state', JSON.stringify({"d": "bduongdb", "p": 2, "r": encodeURIComponent('https://localodoo.hairbyning.com')}));
+        params.append('state', JSON.stringify({"d": "bduongdb", "p": 2, "r": encodeURIComponent('https://localodoo.hairbyning.com')}));
         params.append('no_redirect', true);
         try {
             const response = await fetch(`/auth_oauth/signin?${params}`);
@@ -524,19 +534,20 @@ function createCsrfToken(csrfToken){
 }
 
 async function selectTimeSlot(urlParameters){
-    const elements = document.getElementById('time_slots_form').elements;
     const searchParams = new URLSearchParams(decodeURIComponent(urlParameters));
-    let params = {
-        "schedule_based_on": encodeURIComponent(elements['schedule_based_on'].value),
-        "assign_method": encodeURIComponent(elements['assign_method'].value)
-    };
-    for (const [key, value] of searchParams.entries()) {
-        params[`${key}`] = encodeURIComponent(value);
-    }
+    bookingModalContent.innerHTML = '';
+    spinner.classList.remove('d-none');
+    bookingModal.show();
     try {
+        const params = {};
+        for (const [key, value] of searchParams.entries()) {
+            params[`${key}`] = encodeURIComponent(value);
+        }
         const response = await rpc('/hbn/appointment/' + encodeURIComponent(elements['appointment_type_id'].value) + '/info', params);
         showBookingForm(response);
+        spinner.classList.add('d-none');
     } catch (error) {
+        spinner.classList.add('d-none');
         console.log("JSON-RPC Error:", error);
     }
 }

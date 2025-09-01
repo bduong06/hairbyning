@@ -9,6 +9,7 @@
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/css/datepicker-bs5.min.css">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
         <link href="css/index.css" type="text/css" rel="stylesheet">
+        <link rel="icon" type="image/x-icon" href="/favicon.ico">
     </head>
     <body id="hairByNing" data-bs-spy="scroll" data-bs-target="#mainNavbar" data-bs-smooth-scroll="true" tabindex="0">
         <nav id="mainNavbar" class="navbar fixed-top navbar-expand-lg navbar-custom" data-bs-theme="dark">
@@ -34,7 +35,6 @@
                 <h1>Welcome to Hair By Ning</h1>
                 <p>We specialize in hair coloring.  Get the color you want today!</p>
                 <a href="#booking" class="btn btn-primary" role="button">Book an Appointment</a>
-                <button type="button" data-bs-target="#continue-booking-signin" data-bs-toggle="modal" class="btn btn-primary" data-bs-dismiss="modal">Continue</button>
             </div>
         </section>
         <!-- Services Section -->
@@ -416,6 +416,13 @@
                         </div>
                     </div>
                     <div id="booking-modal-body" class="modal-body">
+                        <div id="spinner" class="d-flex justify-content-center d-none">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                        <div id="booking-modal-body-content">
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" id="booking-modal-cancel" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -423,7 +430,7 @@
                 </div>
             </div>
         </div>
-        <div class="modal fade" id="continue-booking-signin" tabindex="-1" aria-labelledby="continue-booking-signin" aria-hidden="true">
+        <div class="modal fade" id="continue-booking-signin" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="continue-booking-signin" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -439,7 +446,7 @@
                             <a class="btn btn-primary btn-line btn-login" href="https://access.line.me/oauth2/v2.1/authorize?response_type=code&amp;client_id=2007896254&amp;redirect_uri=https%3A%2F%2Flocal.hairbyning.com%2Fauth_oauth%2Fsignin&amp;scope=openid+profile+email&amp;state=%7B%22d%22%3A+%22hairbyning-devdb%22,+%22p%22%3A+5,+%22r%22%3A+%22https%253A%252F%252Flocal.hairbyning.com%252Fweb%22%7D">
                                 <i class="bi bi-line"></i> Log in with LINE
                             </a>     
-                            <button type="button" class="btn btn-primary btn-login" data-bs-dismiss="modal">Continue witout signin</button>
+                            <button type="button" id="continue-no-login" class="btn btn-primary btn-login" data-bs-dismiss="modal">Continue witout signin</button>
                         </div>
                             <button type="button" id="btn-continue" class="btn btn-primary" data-bs-dismiss="modal">Continue</button>
                             <button type="button" id="btn-continue-cancel" class="btn btn-primary" data-bs-dismiss="modal" aria-label="Cancel">Cancel</button>
