@@ -1,31 +1,39 @@
 
 export default class BookingOptionsView {
     constructor(handlers){
-        this.events = [{
+        this.handlers = [{
             target: 'location-select',
             event: 'change',
             handler: this.handleLocationChange
         }];
-        if(handlers != 'undefined'){
-            this.events.push(...handlers);
+        if(handlers !== undefined){
+            this.handlers.push(...handlers);
         }
         this.selects = document.getElementById('select-booking-options').elements;
         this.locationSelect = document.getElementById('location-select');
         this.serviceSelect = document.getElementById('service-select');
         this.capacitySelect = document.getElementById('capacity-select');
         this.csrf_token = document.getElementById('csrf_token');
-        this.installHandlers(this.events);
+        const elem = document.getElementById('date-select');
+        this.datepicker = new Datepicker( document.getElementById('date-select'), {
+            buttonClass: 'btn', 
+            autohide: true,
+            format: "yyyy-mm-dd",
+            minDate: new Date()
+        }); 
+
+        this.installHandlers(this.handlers);
     }
 
-    installHandlers(events){
-        console.log(events);
-        events.forEach((event) => {
-            document.getElementById(`${event.target}`).addEventListener(event.event, event.handler);
+    installHandlers(handlers){
+        console.log(handlers);
+        handlers.forEach((handler) => {
+            document.getElementById(`${handler.target}`).addEventListener(handler.event, handler.handler);
         })
     }
 
     update(options){
-        this.csrf_token = options.csrf_token;
+        this.csrf_token.value = options.csrf_token;
         const keys = Object.keys(options.appointment_types);
         for (const [key, location] of Object.entries(keys)) {
             let locationOption = new Option(location, key);

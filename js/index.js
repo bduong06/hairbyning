@@ -8,26 +8,43 @@ import {
 
 import BookingOptionsModel from "./models/booking_options.js";
 import BookingOptionsView from "./views/booking_options.js";
-import available_time_slots from "./views/available_time_slots.js";
-import requested_date_slots  from "./views/requested_date_slots.js";
+import TimeSlotsModel from "./models/time_slots.js";
+import TimeSlotsView from "./views/time_slots.js";
+import TermsConditionView from "./views/terms_condition.js";
 import appointment_form  from "./views/appointment_form.js";
 import whenReady from "./whenready.js";
+import BookingFormView from "./views/booking_form.js";
 
 const NAMESPACE = "HBN";
-const spinner = document.getElementById('spinner');
-const bookingModal = new bootstrap.Modal('#booking-modal', {keyboard: false});
-const bookingModalContent = document.getElementById('booking-modal-body-content');
-const contModal = document.getElementById('continue-booking-signin');
-const today = new Date();
 
 const OptionsModel = new BookingOptionsModel(rpc);
 
 const OptionsView = new BookingOptionsView([{
     target: 'select-booking-options',
     event: 'submit',
-    handler: handleBookingOptionsSubmt 
+    handler: handleBookingOptionsSubmit 
 }]);
-    
+
+const AvailableTimeSlotsModel = new TimeSlotsModel(rpc);
+const AvailableTimeSlotsView = new TimeSlotsView([{
+            target: 'booking-modal-body-content',
+            event: 'click',
+            handler: handleSelectTimeSlot
+        }]);
+
+const TermsAndConditionView = new TermsConditionView([{
+    target: 'continue-booking-signin',
+    event: 'click',
+    handler: handleContinueBooking
+}]);
+
+const AppoinmentFormView = new BookingFormView([{
+    target: 'booking-modal-body-content',
+    event: 'submit',
+    handler: handleBookingFormSubmit
+}]);
+
+
 
 (async function startBookingApp(){
 
@@ -41,63 +58,13 @@ const OptionsView = new BookingOptionsView([{
 //    liff.init({liffId: '2007896254-Dkr9Yr56'});
     await whenReady();
 
+    bootstrap_init();
+
     OptionsView.update(available_appointments);
 
     if(readFromStorage('redirected')){
         getBookingForm();
     }
-
-    document.getElementById('booking-modal').addEventListener('hide.bs.modal', () => {
-        if (document.activeElement instanceof HTMLElement) {
-            document.activeElement.blur();
-        }
-    }); 
-    contModal.addEventListener('hide.bs.modal', () => {
-        if (document.activeElement instanceof HTMLElement) {
-            document.activeElement.blur();
-        }
-    }); 
-
-    const reviewsCarousel = new bootstrap.Carousel('#reviewsCarousel', {
-        ride: 'carousel'
-    });
-
-    const carouselElm = document.getElementById('galleryCarousel');
-    const galleryCarousel = new bootstrap.Carousel(carouselElm, {
-        ride: false,
-        interval: 0
-    });
-
-    document.querySelectorAll('#portfolio a').forEach((elm, index) => {
-        elm.addEventListener('click', event => {
-            event.preventDefault();
-            galleryCarousel.to(index);
-        })
-    });
-    
-    const galModalElm = document.getElementById('galleryModal');
-    galModalElm.addEventListener('hide.bs.modal', () => {
-        if (document.activeElement instanceof HTMLElement) {
-            document.activeElement.blur();
-        }
-    }); 
-
-    const colNavbarElm = document.getElementById('colNavbar');
-    colNavbarElm.querySelectorAll('.nav-link').forEach((elm, index) => {
-        elm.addEventListener('click', event => {
-            if (colNavbarElm.classList.contains('show')) {
-                bootstrap.Collapse.getInstance(colNavbarElm).toggle();
-            }
-        })
-    });
-
-    const elem = document.getElementById('date-select');
-    const datepicker = new Datepicker(elem, {
-        buttonClass: 'btn', 
-        autohide: true,
-        format: "yyyy-mm-dd",
-        minDate: today
-     }); 
 
      document.getElementById('continue-fb-login').addEventListener('click', function(){
         FB.login(function(response) {
@@ -111,41 +78,40 @@ const OptionsView = new BookingOptionsView([{
      });
 })();
 
-/*     document.getElementById('continue-line-login').addEventListener('click', function(){
-        liff.login(function(response) {
-            if (response) {
-            //    authSignin(response.authResponse);
-//                checkLoginState();
-                console.log('liff.login');
-                console.log(response);
-            } else {
-                console.log('User cancelled login or did not fully authorize.');
-            }
-        }, {scope: 'email,public_profile'});
-     });*/
-
-async function handleBookingOptionsSubmt(event){
+async function handleBookingOptionsSubmit(event){
     event.preventDefault();
     const formElements = this.elements;
     const serviceSelect = formElements["service"];
     const date = formElements["date"].value;
     const asked_capacity = formElements["capacity"].value;
-    spinner.classList.remove('d-none');
-    bookingModalContent.innerHTML = '';
-    bookingModal.show();
-    try {
-        const params = {
-            'date': encodeURIComponent(date),
-            'asked_capacity': encodeURIComponent(asked_capacity),
-            'csrf_token': document.getElementById('csrf_token').value
-        }
-        const response = await rpc('/hbn/appointment/' + encodeURIComponent(serviceSelect.value), params);
-        showAvailableTimeSlots(date,response.appointment);
-        spinner.classList.add('d-none');
-    } catch (error) {
-        spinner.classList.add('d-none');
-        console.log("JSON-RPC Error:", error);
+    const url = `/hbn/appointment/${encodeURIComponent(serviceSelect.value)}`;
+    AvailableTimeSlotsView.show();
+    const params = {
+        'date': encodeURIComponent(date),
+        'asked_capacity': encodeURIComponent(asked_capacity),
     }
+    const response = await OptionsModel.submit(url,params);
+
+    let startIndex = response.slots.findIndex(slot => slot.slots.length > 0);
+    const availableSlots = response.slots.slice(startIndex);
+    const selectedDateIndex = availableSlots.findIndex(slot => slot.day == date);
+
+    if(selectedDateIndex - 2 >= 0){
+        startIndex = selectedDateIndex - 2; 
+    } else {
+        startIndex = 0; 
+    }
+
+    AvailableTimeSlotsView.render({
+        date: date, 
+        asked_capacity: response['asked_capacity'],
+        location: response['location'],
+        appointment_type_id: response['appointment_type_id'],
+        availableSlots: availableSlots,
+        requestedDateSlots: availableSlots[selectedDateIndex].slots,
+        startIndex: startIndex
+    });
+
 }
 
 
@@ -179,133 +145,64 @@ function statusChangeCallback(name) {  // Called with the results from FB.getLog
     }
 }
 
-function showAvailableTimeSlots(date, response) {
-    let startIndex = response.slots.findIndex(slot => slot.slots.length > 0);
-
-    const availableSlots = response.slots.slice(startIndex);
-    const selectedDateIndex = availableSlots.findIndex(slot => slot.day == date);
-
-    if(selectedDateIndex - 2 >= 0){
-        startIndex = selectedDateIndex - 2; 
-    } else {
-        startIndex = 0; 
+async function handleSelectTimeSlot(event){
+    if(event.target.hasAttribute('data-url-parameters')){
+        event.preventDefault();
+        TermsAndConditionView.formElements = event.currentTarget.querySelector('#time_slots_form');
+        TermsAndConditionView.urlParameters = event.target.dataset.urlParameters;
+        AvailableTimeSlotsView.hide();
+        TermsAndConditionView.render();
     }
 
-    let html = ejs.render(available_time_slots, {
-        date: date, 
-        asked_capacity: response['asked_capacity'],
-        location: response['location'],
-        appointment_type_id: response['appointment_type_id'],
-        availableSlots: availableSlots,
-        requestedDateSlots: availableSlots[selectedDateIndex].slots,
-        startIndex: startIndex
-    })
-
-    bookingModalContent.innerHTML = html;
-
-    const elem = document.getElementById('slots-datepicker');
-    const datepicker = new Datepicker(elem, {
-        buttonClass: 'btn', 
-        autohide: true , 
-        datesDisabled: isDateDisabled,
-        updateOnBlur: false,
-        format: 'yyyy-mm-dd',
-        defaultViewDate: date,
-        minDate: today 
-    }); 
-
-    document.getElementById('slots-datepicker').addEventListener('changeDate', (event) => {
-        event.preventDefault();
-        event.target.value = null;
-        const selectedDate = event.detail.date;
-        const tabList = [].slice.call(document.querySelectorAll('#available-dates-nav button'));
-        tabList.forEach(function(tab, index){
-            const date = new Date(tab.dataset.slotDate);
-            date.setHours(0,0,0,0);
-            if(selectedDate.getTime() === date.getTime()){
-                const event = new MouseEvent("click", {
-                    view: window,
-                    bubbles: true,
-                    cancelable: true,
-                });
-                showAvailableTimeSlotsTabs(tabList, index);
-                tab.dispatchEvent(event);
-            }
-        })
-    })
-
-    var triggerTabList = [].slice.call(document.querySelectorAll('#available-dates-nav button'));
-
-    triggerTabList.forEach(function (triggerEl) {
-        var tabTrigger = new bootstrap.Tab(triggerEl);
-        triggerEl.addEventListener('click', function (event) {
-            event.preventDefault();
-            if(!this.classList.contains('active')){
-                document.getElementById('current-slot-date').innerHTML = this.dataset.slotDate;
-                html = ejs.render(requested_date_slots, {requestedDateSlots: JSON.parse(this.dataset.availableSlots) });
-                document.getElementById('available-time-slots-container').innerHTML = html;
-                document.getElementById('available-time-slots-container').querySelectorAll('button').forEach( (elm) => {
-                    addEventListener(elm);
-                })
-                tabTrigger.show();
-            }
-        })
-    })
-
-    document.getElementById('nav-control-prev').addEventListener('click', (event) => {
-        event.preventDefault();
-
-        const elm = event.target;
-        let tabList = [].slice.call(document.querySelectorAll('#available-dates-nav button'));
-        let index = parseInt(elm.dataset.startIndex);
-
-        for(let i=0; i < 7; i++){
-            tabList[index + i].classList.add('d-none');
-        }
-
-        index = (index - 7) < 0 ? 0 : index = index - 7;
-
-        for(let i=0; i < 7; i++){
-            tabList[index + i].classList.remove('d-none');
-        }
-        elm.dataset.startIndex = index;
-        document.getElementById('nav-control-next').dataset.startIndex = index;
-    })
-
-    document.getElementById('nav-control-next').addEventListener('click', (event) => {
-        event.preventDefault();
-
-        const elm = event.target;
-        let tabList = [].slice.call(document.querySelectorAll('#available-dates-nav button'));
-        let index = parseInt(elm.dataset.startIndex);
-
-        for(let i=0; i < 7; i++){
-            tabList[index + i].classList.add('d-none');
-        }
-
-        index = index + 14 > tabList.length ? tabList.length -7 : index + 7;
-
-        for(let i=0; i < 7; i++){
-            tabList[index + i].classList.remove('d-none');
-        }
-        elm.dataset.startIndex = index;
-        document.getElementById('nav-control-prev').dataset.startIndex = index;
-    })
-    checkLoginState();
-    document.getElementById('available-time-slots-container').querySelectorAll('button').forEach(
-        (elm) => {
-            addTimeSlotEventListener(elm)
-        })
 }
 
-function addTimeSlotEventListener(elm){
-    elm.addEventListener('click', (event) => {
+async function handleContinueBooking(event){
+    if(event.target.id === 'continue-no-login'){
+        event.preventDefault();
+        const urlParameters = TermsAndConditionView.urlParameters;
+        const formElements = TermsAndConditionView.formElements;
+        AppoinmentFormView.show();
+        const response = await AvailableTimeSlotsModel.selectTimeSlot(urlParameters,formElements);
+        AppoinmentFormView.data = response;
+        AppoinmentFormView.render();
+    }
+
+}
+
+async function handleBookingFormSubmit(event){
+        event.preventDefault();
+        const elements = document.getElementById('booking-form').elements;
+        spinner.classList.remove('d-none');
+        bookingModalContent.innerHTML = '';
+        bookingModal.show();
+        try {
+            const params = {};
+            params['csrf_token'] = document.getElementById('csrf_token').value;
+            for(const input of elements){
+                if(input.name.length > 0){
+                    params[`${input.name}`] = input.value;
+                }
+            }
+            let url = `/hbn/appointment/${params.id}/submit`;
+
+           const response = await rpc(url, params);
+           console.log('submit');
+           console.log(response);
+ //           showBookingForm(response);
+        } catch (error) {
+            console.log("JSON-RPC Error:", error);
+        }
+
+}
+
+/*async function handleSelectTimeSlot(event){
+    if(event.target.hasAttribute('data-url-parameters')){
         event.preventDefault();
         const urlParameters = event.target.dataset.urlParameters;
-        const formElements = document.getElementById('time_slots_form').elements;
+        const formElements = event.currentTarget.querySelector('#time_slots_form').elements;
         contModal.addEventListener('shown.bs.modal', (event) => {
             if(document.getElementById('btn-continue').classList.contains('d-none')){
-              saveCurrentState(urlParameters, formElements);
+                saveCurrentState(urlParameters, formElements);
             } 
             document.getElementById('continue-no-login').addEventListener('click', (event) => {
                 event.preventDefault();
@@ -323,39 +220,9 @@ function addTimeSlotEventListener(elm){
             contModal.removeEventListener('hidden.bs.modal', hiddenHandler);
             clearStorage(); 
         })
-
-    })
-}
-
-function isDateDisabled(date, viewId, rangeEnd){
-    let dateDisabled = true;
-    const tabList = [].slice.call(document.querySelectorAll('#available-dates-nav button'));
-    const firstDate = new Date(tabList[0].dataset.slotDate);
-    const lastDate = new Date(tabList[tabList.length - 1].dataset.slotDate);
-    firstDate.setHours(0,0,0,0);
-    lastDate.setHours(0,0,0,0);
-    if((date.getTime() >= firstDate.getTime()) &&  (date.getTime() <= lastDate)){
-        dateDisabled = false;
     }
 
-    return dateDisabled;
-}
-
-function showAvailableTimeSlotsTabs(tabList, startIndex){
-    let index = parseInt(document.getElementById('nav-control-next').dataset.startIndex);
-
-    for(let i=0; i < 7; i++){
-        tabList[index + i].classList.add('d-none');
-    }
-
-    index = startIndex - 2 < 0 ? 0 : startIndex -2;
-    for(let i=0; i < 7; i++){
-        tabList[index + i].classList.remove('d-none');
-    }
-
-    document.getElementById('nav-control-next').dataset.startIndex = index;
-    document.getElementById('nav-control-prev').dataset.startIndex = index;
-}
+}*/
 
 function saveCurrentState(urlParameters, formElements){
     const searchParams = new URLSearchParams(decodeURIComponent(urlParameters));
@@ -490,7 +357,7 @@ async function selectTimeSlot(urlParameters, formElements){
             params[`${key}`] = encodeURIComponent(value);
         }
         const response = await rpc('/hbn/appointment/' + encodeURIComponent(formElements['appointment_type_id'].value) + '/info', params);
-        showBookingForm(response);
+        //showBookingForm(response);
         spinner.classList.add('d-none');
     } catch (error) {
         spinner.classList.add('d-none');
@@ -521,4 +388,51 @@ function removeItem(key) {
   const data = serializedData ? JSON.parse(serializedData) : {};
   delete data[key];
   localStorage.setItem(NAMESPACE, JSON.stringify(data));
+}
+
+function bootstrap_init(){
+    document.getElementById('booking-modal').addEventListener('hide.bs.modal', () => {
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
+    }); 
+    document.getElementById('continue-booking-signin').addEventListener('hide.bs.modal', () => {
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
+    }); 
+
+    const reviewsCarousel = new bootstrap.Carousel('#reviewsCarousel', {
+        ride: 'carousel'
+    });
+
+    const carouselElm = document.getElementById('galleryCarousel');
+    const galleryCarousel = new bootstrap.Carousel(carouselElm, {
+        ride: false,
+        interval: 0
+    });
+
+    document.querySelectorAll('#portfolio a').forEach((elm, index) => {
+        elm.addEventListener('click', event => {
+            event.preventDefault();
+            galleryCarousel.to(index);
+        })
+    });
+    
+    const galModalElm = document.getElementById('galleryModal');
+    galModalElm.addEventListener('hide.bs.modal', () => {
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
+    }); 
+
+    const colNavbarElm = document.getElementById('colNavbar');
+    colNavbarElm.querySelectorAll('.nav-link').forEach((elm, index) => {
+        elm.addEventListener('click', event => {
+            if (colNavbarElm.classList.contains('show')) {
+                bootstrap.Collapse.getInstance(colNavbarElm).toggle();
+            }
+        })
+    });
+
 }
