@@ -6,6 +6,8 @@ import {
     rpcBus,
 } from "../addons/web/static/src/core/network/rpc.js";
 
+import BookingOptionsModel from "./models/booking_options.js";
+import BookingOptionsView from "./views/booking_options.js";
 import available_time_slots from "./views/available_time_slots.js";
 import requested_date_slots  from "./views/requested_date_slots.js";
 import appointment_form  from "./views/appointment_form.js";
@@ -15,26 +17,46 @@ const NAMESPACE = "HBN";
 const spinner = document.getElementById('spinner');
 const bookingModal = new bootstrap.Modal('#booking-modal', {keyboard: false});
 const bookingModalContent = document.getElementById('booking-modal-body-content');
+const contModal = document.getElementById('continue-booking-signin');
+const today = new Date();
+
+const OptionsModel = new BookingOptionsModel(rpc);
+
+const OptionsView = new BookingOptionsView([{
+    target: 'select-booking-options',
+    event: 'submit',
+    handler: handleBookingOptionsSubmt 
+}]);
+    
 
 (async function startBookingApp(){
+
+    let available_appointments = null;
+    try {
+        available_appointments = await rpc('/hbn/appointment');
+    } catch (error) {
+        console.log("JSON-RPC Error:", error);
+    }
+
+//    liff.init({liffId: '2007896254-Dkr9Yr56'});
+    await whenReady();
+
+    OptionsView.update(available_appointments);
 
     if(readFromStorage('redirected')){
         getBookingForm();
     }
 
-    try {
-        const response = await rpc('/hbn/appointment');
-        prepare_selects(response.appointment_types);
-        //prepare_selects(response);
-    } catch (error) {
-        console.log("JSON-RPC Error:", error);
-    }
-})();
-
-whenReady().then(() => {
-
-//    liff.init({liffId: '2007896254-Dkr9Yr56'});
-
+    document.getElementById('booking-modal').addEventListener('hide.bs.modal', () => {
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
+    }); 
+    contModal.addEventListener('hide.bs.modal', () => {
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
+    }); 
 
     const reviewsCarousel = new bootstrap.Carousel('#reviewsCarousel', {
         ride: 'carousel'
@@ -69,60 +91,12 @@ whenReady().then(() => {
         })
     });
 
-    document.getElementById('location-select').addEventListener("change", function(event) {
-        event.preventDefault();
-
-        const dataGroup = this.value;
-        const serviceSelect = document.getElementById('service-select');
-        const capacitySelect = document.getElementById('capacity-select');
-        for (const option of serviceSelect.options) {
-            if(option.dataset.group !== undefined) {
-                if(option.dataset.group == dataGroup) {
-                    option.classList.remove('d-none');
-                } else {
-                    option.classList.add('d-none');
-                }
-            } 
-        };
-        for (const option of capacitySelect.options) {
-            if(option.dataset.group !== undefined) {
-                if(option.dataset.group == dataGroup) {
-                    option.classList.remove('d-none');
-                } else {
-                    option.classList.add('d-none');
-                }
-            } 
-        };
-    });
-
-    document.getElementById('select-booking-options').addEventListener("submit", async function(event) {
-        event.preventDefault();
-        const formElements = this.elements;
-        const serviceSelect = formElements["service"];
-        const date = formElements["date"].value;
-        const asked_capacity = formElements["capacity"].value;
-        spinner.classList.remove('d-none');
-        bookingModalContent.innerHTML = '';
-        bookingModal.show();
-        try {
-            const params = {
-                'date': encodeURIComponent(date),
-                'asked_capacity': encodeURIComponent(asked_capacity)
-            }
-            const response = await rpc('/hbn/appointment/' + encodeURIComponent(serviceSelect.value), params);
-            showAvailableTimeSlots(date,response.appointment);
-            spinner.classList.add('d-none');
-        } catch (error) {
-            spinner.classList.add('d-none');
-            console.log("JSON-RPC Error:", error);
-        }
-    });
-
     const elem = document.getElementById('date-select');
     const datepicker = new Datepicker(elem, {
         buttonClass: 'btn', 
         autohide: true,
-        format: "yyyy-mm-dd"
+        format: "yyyy-mm-dd",
+        minDate: today
      }); 
 
      document.getElementById('continue-fb-login').addEventListener('click', function(){
@@ -135,6 +109,7 @@ whenReady().then(() => {
             }
         }, {scope: 'email,public_profile'});
      });
+})();
 
 /*     document.getElementById('continue-line-login').addEventListener('click', function(){
         liff.login(function(response) {
@@ -148,28 +123,31 @@ whenReady().then(() => {
             }
         }, {scope: 'email,public_profile'});
      });*/
-});
 
-
-// Example starter JavaScript for disabling form submissions if there are invalid fields
-/*(() => {
-  'use strict'
-
-  // Fetch all the forms we want to apply custom Bootstrap validation styles to
-  const forms = document.querySelectorAll('.needs-validation')
-
-  // Loop over them and prevent submission
-  Array.from(forms).forEach(form => {
-    form.addEventListener('submit', event => {
-        if (!form.checkValidity()) {
-            event.preventDefault()
-            event.stopImmediatePropagation()
+async function handleBookingOptionsSubmt(event){
+    event.preventDefault();
+    const formElements = this.elements;
+    const serviceSelect = formElements["service"];
+    const date = formElements["date"].value;
+    const asked_capacity = formElements["capacity"].value;
+    spinner.classList.remove('d-none');
+    bookingModalContent.innerHTML = '';
+    bookingModal.show();
+    try {
+        const params = {
+            'date': encodeURIComponent(date),
+            'asked_capacity': encodeURIComponent(asked_capacity),
+            'csrf_token': document.getElementById('csrf_token').value
         }
+        const response = await rpc('/hbn/appointment/' + encodeURIComponent(serviceSelect.value), params);
+        showAvailableTimeSlots(date,response.appointment);
+        spinner.classList.add('d-none');
+    } catch (error) {
+        spinner.classList.add('d-none');
+        console.log("JSON-RPC Error:", error);
+    }
+}
 
-        form.classList.add('was-validated')
-        }, false)
-  })
-})()*/
 
 function testAPI() {                      // Testing Graph API after login.  See statusChangeCallback() for when this call is made.
     console.log('Welcome!  Fetching your information.... ');
@@ -198,43 +176,6 @@ function statusChangeCallback(name) {  // Called with the results from FB.getLog
         document.getElementById('login_status').innerHTML = 'Sign In';
         document.getElementById('continue-login').className = "container";
         document.getElementById('btn-continue').className = "container d-none";
-    }
-}
-
-function prepare_selects(response) {
-
-    var locationSelect = document.getElementById('location-select');
-    var serviceSelect = document.getElementById('service-select');
-    var capacitySelect = document.getElementById('capacity-select');
-    var arr = Object.keys(response);
-
-    for (const [key, location] of Object.entries(arr)) {
-        var locationOption = new Option(location, key);
-        var capacity;
-        locationOption.setAttribute('data-group', key);
-        locationSelect.options[locationSelect.options.length] = locationOption;
-        for (const [key1, service] of Object.entries(response[location])) {
-            var serviceOption = new Option(service.name, service.id);
-            serviceOption.setAttribute('data-group', key);
-            serviceOption.classList.add('d-none');
-            serviceSelect.options[serviceSelect.options.length] = serviceOption;
-            capacity = service.max_capacity;
-        }
-        for (let i = 1; i <= capacity; i++) {
-            var capacityOption = new Option(i, i);
-            capacityOption.setAttribute('data-group', key);
-            capacityOption.classList.add('d-none');
-            capacitySelect.options[capacitySelect.options.length] = capacityOption;
-        }
-    }
-
-    if(readFromStorage('redirected')){
-        const select_elements = document.getElementById('select-booking-options').elements;
-        select_elements['location'].value = readFromStorage('location');
-        select_elements['service'].value = readFromStorage('service');
-        select_elements['capacity'].value = readFromStorage('capacity');
-        select_elements['date'].value = readFromStorage('date');
-        document.getElementById('booking').scrollIntoView();
     }
 }
 
@@ -269,7 +210,8 @@ function showAvailableTimeSlots(date, response) {
         datesDisabled: isDateDisabled,
         updateOnBlur: false,
         format: 'yyyy-mm-dd',
-        defaultViewDate: date
+        defaultViewDate: date,
+        minDate: today 
     }); 
 
     document.getElementById('slots-datepicker').addEventListener('changeDate', (event) => {
@@ -360,19 +302,20 @@ function addTimeSlotEventListener(elm){
     elm.addEventListener('click', (event) => {
         event.preventDefault();
         const urlParameters = event.target.dataset.urlParameters;
-        const contModal = document.getElementById('continue-booking-signin');
+        const formElements = document.getElementById('time_slots_form').elements;
         contModal.addEventListener('shown.bs.modal', (event) => {
             if(document.getElementById('btn-continue').classList.contains('d-none')){
-              saveCurrentState(urlParameters);
+              saveCurrentState(urlParameters, formElements);
             } 
-            document.getElementById('continue-no-login').addEventListener('click', function(){
+            document.getElementById('continue-no-login').addEventListener('click', (event) => {
+                event.preventDefault();
                 clearStorage(); 
-                selectTimeSlot(urlParameters);
+                selectTimeSlot(urlParameters, formElements);
             })
         })
         const hiddenHandler = (event) => {
             if(!document.getElementById('btn-continue').classList.contains('d-none')) {
-                selectTimeSlot(urlParameters);
+                selectTimeSlot(urlParameters, formElements);
             } 
         }
         contModal.addEventListener('hidden.bs.modal', hiddenHandler);
@@ -414,17 +357,16 @@ function showAvailableTimeSlotsTabs(tabList, startIndex){
     document.getElementById('nav-control-prev').dataset.startIndex = index;
 }
 
-function saveCurrentState(urlParameters){
-    const elements = document.getElementById('time_slots_form').elements;
+function saveCurrentState(urlParameters, formElements){
     const searchParams = new URLSearchParams(decodeURIComponent(urlParameters));
     let params = {
-        "schedule_based_on": encodeURIComponent(elements['schedule_based_on'].value),
-        "assign_method": encodeURIComponent(elements['assign_method'].value)
+        "schedule_based_on": encodeURIComponent(formElements['schedule_based_on'].value),
+        "assign_method": encodeURIComponent(formElements['assign_method'].value)
     };
     for (const [key, value] of searchParams.entries()) {
         params[`${key}`] = encodeURIComponent(value);
     }
-    let url = '/hbn/appointment/' + encodeURIComponent(elements['appointment_type_id'].value) + '/info';
+    let url = '/hbn/appointment/' + encodeURIComponent(formElements['appointment_type_id'].value) + '/info';
     const select_elements = document.getElementById('select-booking-options').elements;
     writeToStorage('location', select_elements['location'].value);
     writeToStorage('service', select_elements['service'].value);
@@ -438,6 +380,7 @@ function saveCurrentState(urlParameters){
 async function getBookingForm(){
     let params = JSON.parse(readFromStorage('params'));
     let url = readFromStorage('url');
+    params['csrf_token'] = document.getElementById('csrf_token').value;
     bookingModalContent.innerHTML = '';
     spinner.classList.remove('d-none');
     bookingModal.show();
@@ -468,7 +411,6 @@ function showBookingForm(response){
         'email': email,
         'phone': phone,
         'id': response['appointment_type_id'],
-        'csrf_token': response['csrf_token']
     })
     bookingModalContent.innerHTML = html;
     document.getElementById('booking-modal-cancel').addEventListener('click', function(event){
@@ -478,8 +420,12 @@ function showBookingForm(response){
     document.getElementById('booking-form').addEventListener('submit', async function(event){
         event.preventDefault();
         const elements = document.getElementById('booking-form').elements;
+        spinner.classList.remove('d-none');
+        bookingModalContent.innerHTML = '';
+        bookingModal.show();
         try {
             const params = {};
+            params['csrf_token'] = document.getElementById('csrf_token').value;
             for(const input of elements){
                 if(input.name.length > 0){
                     params[`${input.name}`] = input.value;
@@ -533,7 +479,7 @@ function createCsrfToken(csrfToken){
     document.getElementById('csrf_token').value = csrfToken;
 }
 
-async function selectTimeSlot(urlParameters){
+async function selectTimeSlot(urlParameters, formElements){
     const searchParams = new URLSearchParams(decodeURIComponent(urlParameters));
     bookingModalContent.innerHTML = '';
     spinner.classList.remove('d-none');
@@ -543,7 +489,7 @@ async function selectTimeSlot(urlParameters){
         for (const [key, value] of searchParams.entries()) {
             params[`${key}`] = encodeURIComponent(value);
         }
-        const response = await rpc('/hbn/appointment/' + encodeURIComponent(elements['appointment_type_id'].value) + '/info', params);
+        const response = await rpc('/hbn/appointment/' + encodeURIComponent(formElements['appointment_type_id'].value) + '/info', params);
         showBookingForm(response);
         spinner.classList.add('d-none');
     } catch (error) {

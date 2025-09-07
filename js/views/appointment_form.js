@@ -16,7 +16,6 @@ const appointment_form = `
                 <input type="hidden" name="available_resource_ids" value="<%= available_resource_ids %>">
                 <input type="hidden" name="asked_capacity" value="<%= asked_capacity %>">
                 <input type="hidden" name="id" value="<%= id %>">
-                <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
                 <div class="row mb-4">
                     <div class="col-sm-9">
                         <label class="col-sm-3 col-form-label fw-normal" for="name">Full name*</label>
