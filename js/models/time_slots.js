@@ -1,16 +1,38 @@
 export default class TimeSlotsModel {
     constructor(rpc){
         this._rpc = rpc;
+        this._url = '/hbn/appointment/info';
+        this._urlParameters = null;
+        this._formElements = null;
     }
 
-    async selectTimeSlot(urlParameters, formElements){
-        const searchParams = new URLSearchParams(decodeURIComponent(urlParameters));
+    set formElements(formElements){
+        this._formElements = formElements;
+    }
+
+    get formElements(){
+        return this._formElements;
+    }
+
+    set urlParameters(urlParameters){
+        this._urlParameters = urlParameters;
+    }
+
+    get urlParameters(){
+        return this._urlParameters;
+    }
+
+    async selectTimeSlot(){
+        const searchParams = new URLSearchParams(decodeURIComponent(this._urlParameters));
+        const params = {};
         try {
-            const params = {};
             for (const [key, value] of searchParams.entries()) {
                 params[`${key}`] = encodeURIComponent(value);
             }
-            const response = await this._rpc('/hbn/appointment/' + encodeURIComponent(formElements['appointment_type_id'].value) + '/info', params);
+            for (const input of this._formElements){
+                params[`${input.name}`] = encodeURIComponent(input.value);
+            }
+            const response = await this._rpc(this._url, params);
             return response;
         } catch (error) {
             console.log("JSON-RPC Error:", error);

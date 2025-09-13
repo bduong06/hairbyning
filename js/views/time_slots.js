@@ -3,44 +3,60 @@ import requested_date_slots  from "./requested_date_slots.js";
 
 export default class TimeSlotsView {
     constructor(handlers){
-        this.handleChangeDate = this.handleChangeDate.bind(this);
-        this.handleClick = this.handleClick.bind(this);
-        this.handlers = [{
+        this._handleChangeDate = this._handleChangeDate.bind(this);
+        this._handleClick = this._handleClick.bind(this);
+        this._handlers = [{
             target: 'booking-modal-body-content',
             event: 'changeDate',
-            handler: this.handleChangeDate
+            handler: this._handleChangeDate
         },
         {
             target: 'booking-modal-body-content',
             event: 'click',
-            handler: this.handleClick
+            handler: this._handleClick
         }];
         if(handlers !== undefined) {
             console.log(handlers);
-            this.handlers.push(...handlers);
+            this._handlers.push(...handlers);
         }
-        this.spinner = document.getElementById('spinner');
-        this.modal = new bootstrap.Modal('#booking-modal', {keyboard: false});
-        this.modalContent = document.getElementById('booking-modal-body-content');
-        this.available_time_slots = available_time_slots;
-        this.requested_date_slots = requested_date_slots;
+        this._spinner = document.getElementById('spinner');
+        this._modal = new bootstrap.Modal('#booking-modal', {keyboard: false});
+        this._modalContent = document.getElementById('booking-modal-body-content');
+        this._available_time_slots = available_time_slots;
+        this._requested_date_slots = requested_date_slots;
+        this._data = null;
 
-        this.installHandlers(this.handlers);
+        this.installHandlers(this._handlers);
     }
-    render(data){
-        this.spinner.classList.add('d-none');
+    set data(data){
+        this._data = data;
+    }
+    get data(){
+        return this._data;
+    }
+    render(){
+
+        let startIndex = this._data.slots.findIndex(slot => slot.slots.length > 0);
+        const availableSlots = this._data.slots.slice(startIndex);
+        const selectedDateIndex = availableSlots.findIndex(slot => slot.day == this._data.date);
+
+        if(selectedDateIndex - 2 >= 0){
+            startIndex = selectedDateIndex - 2; 
+        } else {
+            startIndex = 0; 
+        }
 
         let html = ejs.render(available_time_slots, {
-            date: data.date, 
-            asked_capacity: data.asked_capacity,
-            location: data.location,
-            appointment_type_id: data.appointment_type_id,
-            availableSlots: data.availableSlots,
-            requestedDateSlots: data.requestedDateSlots,
-            startIndex: data.startIndex
+            date: this._data.date, 
+            asked_capacity: this._data.asked_capacity,
+            location: this._data.location,
+            appointment_type_id: this._data.appointment_type_id,
+            availableSlots: availableSlots,
+            requestedDateSlots: availableSlots[selectedDateIndex].slots,
+            startIndex: startIndex
         })
 
-        this.modalContent.innerHTML = html;
+        this._modalContent.innerHTML = html;
 
         const today = new Date();
         const elem = document.getElementById('slots-datepicker');
@@ -50,18 +66,19 @@ export default class TimeSlotsView {
             datesDisabled: this.isDateDisabled,
             updateOnBlur: false,
             format: 'yyyy-mm-dd',
-            defaultViewDate: data.date,
+            defaultViewDate: this._data.date,
             minDate: today 
         }); 
 
-        this.initialize_tabs();
+        this._initialize_tabs();
+        this._spinner.classList.add('d-none');
     }
     installHandlers(handlers){
         handlers.forEach((handler) => {
             document.getElementById(`${handler.target}`).addEventListener(handler.event, handler.handler);
         })
     }
-    handleChangeDate(event){
+    _handleChangeDate(event){
         event.preventDefault();
 
         event.target.value = null;
@@ -81,14 +98,12 @@ export default class TimeSlotsView {
             }
         });
     }
-    handleClick(event){
+    _handleClick(event){
         if(event.target.classList.contains('datepicker-cell') || event.target.classList.contains('date-picker')) {
             event.stopImmediatePropagation();
         } else {
-            event.preventDefault();
             const elm = event.target;
             if(elm.id === 'nav-control-prev'){
-                event.preventDefault();
 
                 let tabList = [].slice.call(document.querySelectorAll('#available-dates-nav button'));
                 let index = parseInt(elm.dataset.startIndex);
@@ -153,12 +168,12 @@ export default class TimeSlotsView {
         return dateDisabled;
     }
     show(){
-        this.modalContent.innerHTML = '';
-        this.modal.show();
-        this.spinner.classList.remove('d-none');
+        this._modalContent.innerHTML = null; 
+        this._modal.show();
+        this._spinner.classList.remove('d-none');
     }
     hide(){
-        this.modal.hide();
+        this._modal.hide();
     }
 
     showAvailableTimeSlotsTabs(tabList, startIndex){
@@ -177,7 +192,7 @@ export default class TimeSlotsView {
         document.getElementById('nav-control-prev').dataset.startIndex = index;
     }
 
-    initialize_tabs(){
+    _initialize_tabs(){
         var triggerTabList = [].slice.call(document.querySelectorAll('#available-dates-nav button'));
         triggerTabList.forEach(function (triggerEl) {
             var tabTrigger = new bootstrap.Tab(triggerEl);

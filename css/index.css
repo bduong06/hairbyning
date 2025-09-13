@@ -54,6 +54,14 @@
             padding: 0;*/
         }
 
+        .profile {
+            height: 46px;
+            /*background-repeat: no-repeat;
+            width: 90px;
+            line-height: 50px;
+            padding: 0;*/
+        }
+
         .navbar-nav li a:hover, .navbar-nav a.active{
             color: #9c27a3 !important;
             background-color: #fff !important;

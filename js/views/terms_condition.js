@@ -1,33 +1,18 @@
-
-export default class TermsConditionView {
+import terms_conditions from "./terms_condition_txt.js";
+export default class TermsConditionsView {
     constructor(handlers){
-        this.handlers = [{}];
-        this.modal = new bootstrap.Modal('#continue-booking-signin', {keyboard: false});
+        this._handlers = [];
+        this._modal = new bootstrap.Modal('#terms-conditions-modal', {keyboard: false});
+        this._modalContent = document.getElementById('terms-conditions-body-content');
         if(handlers !== undefined) {
-            this.handlers.push(...handlers);
+            this._handlers.push(...handlers);
         }
-        this._urlParameters = null;
-        this._formElements = null;
         this.installHandlers(handlers);
     }
-    set urlParameters(urlParameters){
-        this._urlParameters = urlParameters;
-    }
-    set formElements(formElements){
-        this._formElements = formElements;
-    }
-
-    get urlParameters(){
-        return this._urlParameters;
-    }
-    get formElements(){
-        return this._formElements;
-    }
-
     render(){
-        this.modal.show();
+        this._modalContent.innerHTML = terms_conditions;
+        this._modal.show();
     }
-
     installHandlers(handlers){
         handlers.forEach((handler) => {
             console.log(handlers);

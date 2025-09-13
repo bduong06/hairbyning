@@ -10,9 +10,6 @@ export default class BookingOptionsView {
             this.handlers.push(...handlers);
         }
         this.selects = document.getElementById('select-booking-options').elements;
-        this.locationSelect = document.getElementById('location-select');
-        this.serviceSelect = document.getElementById('service-select');
-        this.capacitySelect = document.getElementById('capacity-select');
         this.csrf_token = document.getElementById('csrf_token');
         const elem = document.getElementById('date-select');
         this.datepicker = new Datepicker( document.getElementById('date-select'), {
@@ -21,17 +18,14 @@ export default class BookingOptionsView {
             format: "yyyy-mm-dd",
             minDate: new Date()
         }); 
-
         this.installHandlers(this.handlers);
     }
-
     installHandlers(handlers){
         console.log(handlers);
         handlers.forEach((handler) => {
             document.getElementById(`${handler.target}`).addEventListener(handler.event, handler.handler);
         })
     }
-
     update(options){
         this.csrf_token.value = options.csrf_token;
         const keys = Object.keys(options.appointment_types);
@@ -55,7 +49,6 @@ export default class BookingOptionsView {
             }
         }
     }
-
     handleLocationChange(event){
         event.preventDefault();
         const selects = this.form.elements;
@@ -68,7 +61,7 @@ export default class BookingOptionsView {
                     option.classList.add('d-none');
                 }
             } 
-        };
+        }
         for (const option of selects['capacity'].options) {
             if(option.dataset.group !== undefined) {
                 if(option.dataset.group == dataGroup) {
@@ -77,14 +70,6 @@ export default class BookingOptionsView {
                     option.classList.add('d-none');
                 }
             } 
-        };
-    }
-
-    setSelected(){
-        this.selects['location'].value = readFromStorage('location');
-        this.selects['service'].value = readFromStorage('service');
-        this.selects['capacity'].value = readFromStorage('capacity');
-        this.selects['date'].value = readFromStorage('date');
-        document.getElementById('booking').scrollIntoView();
+        }
     }
 }

@@ -6,45 +6,243 @@ import {
     rpcBus,
 } from "../addons/web/static/src/core/network/rpc.js";
 
+const dbName= 'bduongdb';
+
 import BookingOptionsModel from "./models/booking_options.js";
 import BookingOptionsView from "./views/booking_options.js";
 import TimeSlotsModel from "./models/time_slots.js";
 import TimeSlotsView from "./views/time_slots.js";
-import TermsConditionView from "./views/terms_condition.js";
+import TermsConditionsView from "./views/terms_condition.js";
 import appointment_form  from "./views/appointment_form.js";
 import whenReady from "./whenready.js";
 import BookingFormView from "./views/booking_form.js";
+import BookingFormModel from "./models/booking_form.js";
+import ConfirmBookingView from "./views/confirm_booking.js";
 
-const NAMESPACE = "HBN";
+class User {
+    constructor(rpc){
+        this._profileLink = document.getElementById('user-logged-in');
+        this._profile = null;
+        this._isLoggedIn = false;
+        this._session_info = null;
+        this._oauth = null;
+        this._rpc = rpc;
+    }
+    set profile(profile){
+        this._profile = profile;
+        console.log(this._profile.pictureUrl);
+        if(profile.pictureUrl){
+            this._createPofileLink();
+        }
+        this._get_session_info();
+    }
+    get profile(){
+        return this._profile;
+    }
+    set oauth(oauth){
+        this._oauth = oauth;
+    }
+    async _get_session_info(){
+        try {
+            const session_info = await rpc('/web/session/get_session_info');
+            this._session_info = session_info;
+            console.log('get_session_info');
+            console.log(session_info);
+        } catch (error) {
+            console.log("JSON-RPC Error: get_session_info", error);
+        }
+    }
+    isLoggedIn(){
+        return this._isLoggedIn;
+    }
+    _createPofileLink(){
+        const img = document.getElementById('profile-image');
+        img.src = this._profile.pictureUrl;
+    }
+    async login(){
+        this._oauth.login();
+    }
+}
 
-const OptionsModel = new BookingOptionsModel(rpc);
+class LineOauth {
+    constructor(){
+        this._baseCallbackURI = window.location.host + '/auth_oauth/signin?';
+        this._callbackURI = null;
+        this._liffId = '2007896254-Dkr9Yr56';
+        this._scope = 'openid+profile+email';
+        this._state = {
+            'd': dbName,
+            'p': 5,
+            'r': window.location.host
+        }
+        this._setCallbackURI();
+    }
+    _setCallbackURI(){
+        const params = new URLSearchParams();
+        params.append('scope', this._scope);
+        params.append('state', JSON.stringify(this._state));
+        this._callbackURI = encodeURIComponent(this._baseCallbackURI) + params;
+    }
+    get callbackURI(){
+        return this._callbackURI;
+    }
+    async login(){
+        try{
+            await liff.init({liffId: this._liffId});
+            liff.login({redirectUri: this._callbackURI});
+        } catch(error) {
+            console.error("LIFF initialization failed", error);
+        };
+    }
+    async init(){
+        try {
+            await liff.init({liffId: this._liffId });
+            if (liff.isLoggedIn()) {
+                const profile = await liff.getProfile();
+                user.profile = profile;
+            } 
+        } catch (error) {
+            console.error("LIFF initialization failed", error);
+        }
+    }
 
-const OptionsView = new BookingOptionsView([{
+}
+
+class LocalStorage{
+    constructor(namespace){
+        this._nameSpace = namespace;
+    }
+    clear(){
+        localStorage.setItem(this._nameSpace, JSON.stringify({}));
+    }
+    write(key, value){
+        const serializedData = localStorage.getItem(this._nameSpace);
+        const data = serializedData ? JSON.parse(serializedData) : {};
+        data[key] = value;
+        localStorage.setItem(this._nameSpace, JSON.stringify(data));
+    }
+    read(key){
+        const serializedData = localStorage.getItem(this._nameSpace);
+        const data = JSON.parse(serializedData);
+        return data ? data[key] : undefined;
+    }
+    remove(key){
+        const serializedData = localStorage.getItem(this._nameSpace);
+        const data = serializedData ? JSON.parse(serializedData) : {};
+        delete data[key];
+        localStorage.setItem(this._nameSpace, JSON.stringify(data));
+    }
+}
+
+class State {
+    constructor(namespace){
+        this._urlParameters = null;
+        this._oauth = null;
+        this._formElements = null;
+        this._redirected = false;
+        this._selects = document.getElementById('select-booking-options').querySelectorAll('.form-control');
+        this._localStorage = new LocalStorage(namespace);
+    }
+    set urlParameters(urlParams){
+        this._urlParameters = urlParams;
+    }
+    get urlParameters(){
+        return thie._urlParameters;
+    }
+    set oauth(oauth){
+        this._oauth = oauth;
+    }
+    get oauth(){
+        return this._oauth;
+    }
+    set formElements(formElements){
+        this._formElements = formElements;
+    }
+    get formElements(){
+        return this._formElements;
+    }
+    get selects(){
+        return this._selects;
+    }
+    set redirected(redirected){
+        this._redirected = redirected;
+    }
+    get redirected(){
+        return this._redirected;
+    }
+    save(){
+        const inputs = [];
+        const selects = [];
+
+        for (const input of this._formElements){
+            inputs.push({
+                name: input.name,
+                value: input.value
+            })
+        }
+        for (const select of this._selects){
+            selects.push({
+                name: select.name,
+                value: select.value
+            })
+        }
+        this._localStorage.write('urlParameters', this._urlParameters);
+        this._localStorage.write('formElements', JSON.stringify(inputs));
+        this._localStorage.write('selects', JSON.stringify(selects));
+        this._localStorage.write('oauth', JSON.stringify(this._oauth));
+        this._localStorage.write('redirected', true);
+    /*    writeToStorage('location', select_elements['location'].value);
+        writeToStorage('service', select_elements['service'].value);
+        writeToStorage('capacity', select_elements['capacity'].value);
+        writeToStorage('date', select_elements['date'].value);*/
+    }
+    restore(){
+        this._urlParameters = this._localStorage.read('urlParameters');
+        this._redirected = this._localStorage.read('redirected');
+        this._formElements = JSON.parse(this._localStorage.read('formElements'));
+        this._oauth = JSON.parse(this._localStorage.read('oauth'));
+        for (const select of JSON.parse(this._localStorage.read('selects'))){
+            this._selects[select.name].value = select.value;
+        }
+        document.getElementById('booking').scrollIntoView();
+    }
+    isRedirected(){
+        return this._localStorage.read('redirected');
+    }
+}
+
+const bookingOptionsModel = new BookingOptionsModel(rpc);
+
+const bookingOptionsView = new BookingOptionsView([{
     target: 'select-booking-options',
     event: 'submit',
     handler: handleBookingOptionsSubmit 
 }]);
 
-const AvailableTimeSlotsModel = new TimeSlotsModel(rpc);
-const AvailableTimeSlotsView = new TimeSlotsView([{
+const timeSlotsModel = new TimeSlotsModel(rpc);
+const timeSlotsView = new TimeSlotsView([{
             target: 'booking-modal-body-content',
             event: 'click',
             handler: handleSelectTimeSlot
         }]);
 
-const TermsAndConditionView = new TermsConditionView([{
-    target: 'continue-booking-signin',
+const termsConditionsView = new TermsConditionsView([{
+    target: 'terms-conditions-modal',
     event: 'click',
     handler: handleContinueBooking
 }]);
 
-const AppoinmentFormView = new BookingFormView([{
+const bookingFormModel = new BookingFormModel(rpc);
+const bookingFormView = new BookingFormView();
+
+const confirmBookingView = new ConfirmBookingView([{
     target: 'booking-modal-body-content',
-    event: 'submit',
-    handler: handleBookingFormSubmit
+    event: 'click',
+    handler: handleLogout
 }]);
 
-
+const user = new User();
+const state = new State('HBN');
 
 (async function startBookingApp(){
 
@@ -55,18 +253,22 @@ const AppoinmentFormView = new BookingFormView([{
         console.log("JSON-RPC Error:", error);
     }
 
-//    liff.init({liffId: '2007896254-Dkr9Yr56'});
     await whenReady();
+
+
+    if(state.isRedirected()){
+
+    }
 
     bootstrap_init();
 
-    OptionsView.update(available_appointments);
+    bookingOptionsView.update(available_appointments);
 
     if(readFromStorage('redirected')){
-        getBookingForm();
+        continuePreviousBooking();
     }
 
-     document.getElementById('continue-fb-login').addEventListener('click', function(){
+/*     document.getElementById('continue-fb-login').addEventListener('click', function(){
         FB.login(function(response) {
             if (response.authResponse) {
                 authSignin(response.authResponse);
@@ -75,239 +277,113 @@ const AppoinmentFormView = new BookingFormView([{
                 console.log('User cancelled login or did not fully authorize.');
             }
         }, {scope: 'email,public_profile'});
-     });
+     });*/
 })();
 
 async function handleBookingOptionsSubmit(event){
     event.preventDefault();
-    const formElements = this.elements;
-    const serviceSelect = formElements["service"];
-    const date = formElements["date"].value;
-    const asked_capacity = formElements["capacity"].value;
-    const url = `/hbn/appointment/${encodeURIComponent(serviceSelect.value)}`;
-    AvailableTimeSlotsView.show();
-    const params = {
-        'date': encodeURIComponent(date),
-        'asked_capacity': encodeURIComponent(asked_capacity),
-    }
-    const response = await OptionsModel.submit(url,params);
-
-    let startIndex = response.slots.findIndex(slot => slot.slots.length > 0);
-    const availableSlots = response.slots.slice(startIndex);
-    const selectedDateIndex = availableSlots.findIndex(slot => slot.day == date);
-
-    if(selectedDateIndex - 2 >= 0){
-        startIndex = selectedDateIndex - 2; 
-    } else {
-        startIndex = 0; 
-    }
-
-    AvailableTimeSlotsView.render({
-        date: date, 
-        asked_capacity: response['asked_capacity'],
-        location: response['location'],
-        appointment_type_id: response['appointment_type_id'],
-        availableSlots: availableSlots,
-        requestedDateSlots: availableSlots[selectedDateIndex].slots,
-        startIndex: startIndex
-    });
-
-}
-
-
-function testAPI() {                      // Testing Graph API after login.  See statusChangeCallback() for when this call is made.
-    console.log('Welcome!  Fetching your information.... ');
-    FB.api('/me', function(response) {
-        console.log('Successful login for: ' + response.name);
-        document.getElementById('login_status').innerHTML =
-        'Thanks for logging in, ' + response.name + '!';
-    });
-}
-
-async function checkLoginState() {               // Called when a person is finished with the Login Button.
-    try {
-        const response = await rpc('/web/session/get_session_info');
-        statusChangeCallback(response.name);
-    } catch (error) {
-        statusChangeCallback(null);
-    }
-}
-
-function statusChangeCallback(name) {  // Called with the results from FB.getLoginStatus().
-    if(name){
-        document.getElementById('login_status').innerHTML = name;
-        document.getElementById('continue-login').className = "container d-none";
-        document.getElementById('btn-continue').className = "container";
-    } else {
-        document.getElementById('login_status').innerHTML = 'Sign In';
-        document.getElementById('continue-login').className = "container";
-        document.getElementById('btn-continue').className = "container d-none";
-    }
+    const date = this.elements['date'].value;
+    bookingOptionsModel.formElements = this.elements;
+    timeSlotsView.show();
+    const response = await bookingOptionsModel.submit();
+    response.date = date;
+    timeSlotsView.data = response;
+    timeSlotsView.render();
 }
 
 async function handleSelectTimeSlot(event){
     if(event.target.hasAttribute('data-url-parameters')){
-        event.preventDefault();
-        TermsAndConditionView.formElements = event.currentTarget.querySelector('#time_slots_form');
-        TermsAndConditionView.urlParameters = event.target.dataset.urlParameters;
-        AvailableTimeSlotsView.hide();
-        TermsAndConditionView.render();
+        state.formElements = document.getElementById('time_slots_form').elements;
+        state.urlParameters = event.target.dataset.urlParameters;
+        timeSlotsView.hide();
+        termsConditionsView.render();
     }
 
 }
 
 async function handleContinueBooking(event){
-    if(event.target.id === 'continue-no-login'){
-        event.preventDefault();
-        const urlParameters = TermsAndConditionView.urlParameters;
-        const formElements = TermsAndConditionView.formElements;
-        AppoinmentFormView.show();
-        const response = await AvailableTimeSlotsModel.selectTimeSlot(urlParameters,formElements);
-        AppoinmentFormView.data = response;
-        AppoinmentFormView.render();
-    }
+    switch(event.target.id){
+        case "continue-no-login":
+            timeSlotsModel.urlParameters = state.urlParameters;
+            timeSlotsModel.formElements = state.formElements;
+            bookingFormView.show();
+            const response = await timeSlotsModel.selectTimeSlot();
+            bookingFormView.data = response;
+            bookingFormView.render();
+            bookingFormView.installHandlers([{
+                target: 'booking-form',
+                event: 'submit',
+                handler: handleBookingFormSubmit
+            }]);
+            break;
+        case "continue-fb-login":
+//            saveCurrentState(urlParameters, formElements);
+            break;
+        case "continue-line-login":
+            event.preventDefault();
+            user.oauth = new LineOauth();
+            state.oauth = user.oauth;
+            state.save();
+            user.login();
+            break;
+        case "continue-logged-in-btn":
 
+    }
 }
 
-async function handleBookingFormSubmit(event){
-        event.preventDefault();
-        const elements = document.getElementById('booking-form').elements;
-        spinner.classList.remove('d-none');
-        bookingModalContent.innerHTML = '';
-        bookingModal.show();
-        try {
-            const params = {};
-            params['csrf_token'] = document.getElementById('csrf_token').value;
-            for(const input of elements){
-                if(input.name.length > 0){
-                    params[`${input.name}`] = input.value;
-                }
-            }
-            let url = `/hbn/appointment/${params.id}/submit`;
-
-           const response = await rpc(url, params);
-           console.log('submit');
-           console.log(response);
- //           showBookingForm(response);
-        } catch (error) {
-            console.log("JSON-RPC Error:", error);
-        }
-
+async function handleBookingFormSubmit(event) {
+        event.preventDefault()
+        bookingFormModel.formElements = document.getElementById('booking-form').elements;
+        confirmBookingView.show();
+        const response = bookingFormModel.submit();
+        confirmBookingView.data = response;
+        confirmBookingView.render();
 }
-
-/*async function handleSelectTimeSlot(event){
-    if(event.target.hasAttribute('data-url-parameters')){
-        event.preventDefault();
-        const urlParameters = event.target.dataset.urlParameters;
-        const formElements = event.currentTarget.querySelector('#time_slots_form').elements;
-        contModal.addEventListener('shown.bs.modal', (event) => {
-            if(document.getElementById('btn-continue').classList.contains('d-none')){
-                saveCurrentState(urlParameters, formElements);
-            } 
-            document.getElementById('continue-no-login').addEventListener('click', (event) => {
-                event.preventDefault();
-                clearStorage(); 
-                selectTimeSlot(urlParameters, formElements);
-            })
-        })
-        const hiddenHandler = (event) => {
-            if(!document.getElementById('btn-continue').classList.contains('d-none')) {
-                selectTimeSlot(urlParameters, formElements);
-            } 
-        }
-        contModal.addEventListener('hidden.bs.modal', hiddenHandler);
-        document.getElementById('btn-continue-cancel').addEventListener('click', function(event){
-            contModal.removeEventListener('hidden.bs.modal', hiddenHandler);
-            clearStorage(); 
-        })
-    }
-
-}*/
 
 function saveCurrentState(urlParameters, formElements){
-    const searchParams = new URLSearchParams(decodeURIComponent(urlParameters));
-    let params = {
-        "schedule_based_on": encodeURIComponent(formElements['schedule_based_on'].value),
-        "assign_method": encodeURIComponent(formElements['assign_method'].value)
-    };
-    for (const [key, value] of searchParams.entries()) {
-        params[`${key}`] = encodeURIComponent(value);
+    const inputs = [];
+    const selects = [];
+
+    for (const input of formElements){
+        inputs.push({
+            name: input.name,
+            value: input.value
+        })
     }
-    let url = '/hbn/appointment/' + encodeURIComponent(formElements['appointment_type_id'].value) + '/info';
-    const select_elements = document.getElementById('select-booking-options').elements;
-    writeToStorage('location', select_elements['location'].value);
+    const select_elements = document.getElementById('select-booking-options').querySelectorAll('.form-control');
+    for (const select of select_elements){
+        selects.push({
+            name: select.name,
+            value: select.value
+        })
+    }
+/*    writeToStorage('location', select_elements['location'].value);
     writeToStorage('service', select_elements['service'].value);
     writeToStorage('capacity', select_elements['capacity'].value);
-    writeToStorage('date', select_elements['date'].value);
-    writeToStorage('params', JSON.stringify(params));
-    writeToStorage('url', url);
+    writeToStorage('date', select_elements['date'].value);*/
+    writeToStorage('urlParameters', urlParameters);
+    writeToStorage('inputs', JSON.stringify(inputs));
+    writeToStorage('selects', JSON.stringify(selects));
     writeToStorage('redirected', true);
 }
 
-async function getBookingForm(){
-    let params = JSON.parse(readFromStorage('params'));
-    let url = readFromStorage('url');
-    params['csrf_token'] = document.getElementById('csrf_token').value;
-    bookingModalContent.innerHTML = '';
-    spinner.classList.remove('d-none');
-    bookingModal.show();
-    try {
-        const response = await rpc(url, params);
-        showBookingForm(response);
-        spinner.classList.add('d-none');
-    } catch (error) {
-        spinner.classList.add('d-none');
-        console.log("JSON-RPC Error:", error);
-    }
+async function continuePreviousBooking(){
+    timeSlotsModel.urlParameters = state.urlParameters;
+    timeSlotsModel.formElements = state.formElements;
+    bookingFormView.show();
+    const response = await timeSlotsModel.selectTimeSlot();
+    bookingFormView.data = response;
+    bookingFormView.render();
+    bookingFormView.installHandlers([{
+        target: 'booking-form',
+        event: 'submit',
+        handler: handleBookingFormSubmit
+    }]);
+    state.clear();
 }
 
-function showBookingForm(response){
-    const partner_data = response['partner_data'];
-    const name = partner_data != undefined ? partner_data.name : "";
-    const email = partner_data != undefined ? partner_data.email : "";
-    const phone = ((partner_data != undefined) && (partner_data.phone)) ? partner_data.phone : "";
-    let html = ejs.render(appointment_form, {
-        'date_locale': response['date_locale'],
-        'asked_capacity': response['asked_capacity'],
-        'location': "Location",
-        'duration': response['duration'],
-        'datetime_str': response['datetime_str'],
-        'duration_str': response['duration_str'],
-        'available_resource_ids': response['available_resource_ids'],
-        'name': name,
-        'email': email,
-        'phone': phone,
-        'id': response['appointment_type_id'],
-    })
-    bookingModalContent.innerHTML = html;
-    document.getElementById('booking-modal-cancel').addEventListener('click', function(event){
-        event.preventDefault();
-        clearStorage();
-    })
-    document.getElementById('booking-form').addEventListener('submit', async function(event){
-        event.preventDefault();
-        const elements = document.getElementById('booking-form').elements;
-        spinner.classList.remove('d-none');
-        bookingModalContent.innerHTML = '';
-        bookingModal.show();
-        try {
-            const params = {};
-            params['csrf_token'] = document.getElementById('csrf_token').value;
-            for(const input of elements){
-                if(input.name.length > 0){
-                    params[`${input.name}`] = input.value;
-                }
-            }
-            let url = `/hbn/appointment/${params.id}/submit`;
+function handleLogout(event){
 
-           const response = await rpc(url, params);
-           console.log('submit');
-           console.log(response);
- //           showBookingForm(response);
-        } catch (error) {
-            console.log("JSON-RPC Error:", error);
-        }
-    })
 }
 
 async function authSignin(authResponse){
@@ -324,7 +400,7 @@ async function authSignin(authResponse){
         params.append('no_redirect', true);
         try {
             const response = await fetch(`/auth_oauth/signin?${params}`);
-            const contModal = bootstrap.Modal.getInstance(document.getElementById('continue-booking-signin'));
+            const contModal = bootstrap.Modal.getInstance(document.getElementById('terms-condition-modal'));
             if(response.status == '200'){
                 contModal.hide();
                 console.log('auth_oauth/signin');
@@ -342,61 +418,13 @@ async function authSignin(authResponse){
     }
 }
 
-function createCsrfToken(csrfToken){
-    document.getElementById('csrf_token').value = csrfToken;
-}
-
-async function selectTimeSlot(urlParameters, formElements){
-    const searchParams = new URLSearchParams(decodeURIComponent(urlParameters));
-    bookingModalContent.innerHTML = '';
-    spinner.classList.remove('d-none');
-    bookingModal.show();
-    try {
-        const params = {};
-        for (const [key, value] of searchParams.entries()) {
-            params[`${key}`] = encodeURIComponent(value);
-        }
-        const response = await rpc('/hbn/appointment/' + encodeURIComponent(formElements['appointment_type_id'].value) + '/info', params);
-        //showBookingForm(response);
-        spinner.classList.add('d-none');
-    } catch (error) {
-        spinner.classList.add('d-none');
-        console.log("JSON-RPC Error:", error);
-    }
-}
-
- 
-function writeToStorage(key, value) {
-  const serializedData = localStorage.getItem(NAMESPACE);
-  const data = serializedData ? JSON.parse(serializedData) : {};
-  data[key] = value;
-  localStorage.setItem(NAMESPACE, JSON.stringify(data));
-}
- 
-function readFromStorage(key) {
-  const serializedData = localStorage.getItem(NAMESPACE);
-  const data = JSON.parse(serializedData);
-  return data ? data[key] : undefined;
-}
-
-function clearStorage() {
-  localStorage.setItem(NAMESPACE, JSON.stringify({}));
-}
- 
-function removeItem(key) {
-  const serializedData = localStorage.getItem(NAMESPACE);
-  const data = serializedData ? JSON.parse(serializedData) : {};
-  delete data[key];
-  localStorage.setItem(NAMESPACE, JSON.stringify(data));
-}
-
 function bootstrap_init(){
     document.getElementById('booking-modal').addEventListener('hide.bs.modal', () => {
         if (document.activeElement instanceof HTMLElement) {
             document.activeElement.blur();
         }
     }); 
-    document.getElementById('continue-booking-signin').addEventListener('hide.bs.modal', () => {
+    document.getElementById('terms-conditions-modal').addEventListener('hide.bs.modal', () => {
         if (document.activeElement instanceof HTMLElement) {
             document.activeElement.blur();
         }

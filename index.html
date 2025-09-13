@@ -26,6 +26,14 @@
                         <li class="nav-item"><a class="nav-link" href="#booking">BOOKING</a></li>
                         <li class="nav-item"><a class="nav-link" href="#contact">CONTACT</a></li>
                     </ul>
+                    <div id="user-logged-in" class="dropdown">
+                        <a class="btn dropdown-toggle border-0" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><img id="profile-image" class="rounded-circle profile"/></a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#">Action</a></li>
+                            <li><a class="dropdown-item" href="#">Another action</a></li>
+                            <li><a class="dropdown-item" href="#">Something else here</a></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </nav>
@@ -35,6 +43,9 @@
                 <h1>Welcome to Hair By Ning</h1>
                 <p>We specialize in hair coloring.  Get the color you want today!</p>
                 <a href="#booking" class="btn btn-primary" role="button">Book an Appointment</a>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#terms-conditions-modal">
+                Launch Terms and Conditions
+                </button>
             </div>
         </section>
         <!-- Services Section -->
@@ -377,20 +388,20 @@
             <div class="container booking">
                 <form id="select-booking-options" class="booking-form" autocomplete="off">
                     <label for="location-select">choose a location:</label>
-                    <select class="form-select" name="location" id="location-select" required>
+                    <select class="form-control" name="location" id="location-select" required>
                         <option value="">--select location--</option>
                     </select>
                     <label for="service-select">choose a service:</label>
-                    <select class="form-select" name="service" id="service-select" required>
+                    <select class="form-control" name="service" id="service-select" required>
                         <option value="">--select service--</option>
                     </select>
                     <label for="capacity-select">how many people:</label>
-                    <select class="form-select" name="capacity" id="capacity-select" required>
+                    <select class="form-control" name="capacity" id="capacity-select" required>
                         <option value="">--select how many--</option>
                     </select>
                     <label for="date-select">choose date:</label>
                     <input class="form-control date-picker" name="date" type="text" id="date-select" inputmode="none" required>
-                    <input type="hidden" id="csrf_token" name="csrf_token" value="">
+                    <input class="form-control" type="hidden" id="csrf_token" name="csrf_token" value="">
                     <button type="submit" id="get-available-time-slots" class="cta-button">Search</button>
                 </form> 
             </div>
@@ -422,7 +433,7 @@
                                 <span class="visually-hidden">Loading...</span>
                             </div>
                         </div>
-                        <div id="booking-modal-body-content">
+                        <div id="booking-modal-body-content" class="container">
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -431,26 +442,51 @@
                 </div>
             </div>
         </div>
-        <div class="modal fade" id="continue-booking-signin" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="continue-booking-signin" aria-hidden="true">
+        <div class="modal fade" id="terms-conditions-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="continue-booking-signin" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h1 class="modal-title fs-5">Modal title</h1>
+                        <h1 class="modal-title fs-5">Terms and Conditions</h1>
                     </div>
                     <div class="modal-body">
-                        ...
-                    </div>
-                    <div class="modal-footer">
-                        <div id="continue-login" class="container">
-                            <button type="button" id="continue-fb-login" class="btn btn-primary btn-facebook btn-login"><i class="bi bi-facebook"></i> Continue with Facebook</button>
-<!--                            <button type="button" id="continue-line-login" data-bs-target="#liffLoginModal" data-bs-toggle="modal" class="btn btn-primary btn-line btn-login" data-bs-dismiss="modal"><i class="bi bi-line"></i> Continue with Line Chat</button>-->
-                            <a class="btn btn-primary btn-line btn-login" href="https://access.line.me/oauth2/v2.1/authorize?response_type=code&amp;client_id=2007896254&amp;redirect_uri=https%3A%2F%2Flocal.hairbyning.com%2Fauth_oauth%2Fsignin&amp;scope=openid+profile+email&amp;state=%7B%22d%22%3A+%22hairbyning-devdb%22,+%22p%22%3A+5,+%22r%22%3A+%22https%253A%252F%252Flocal.hairbyning.com%252Fweb%22%7D">
-                                <i class="bi bi-line"></i> Log in with LINE
-                            </a>     
-                            <button type="button" id="continue-no-login" class="btn btn-primary btn-login" data-bs-dismiss="modal">Continue witout signin</button>
+                        <div id="terms-conditions-body-content" class="modal-content container">
                         </div>
-                            <button type="button" id="btn-continue" class="btn btn-primary" data-bs-dismiss="modal">Continue</button>
+                        <div id="continue-not-logged-in" class="container">
+                            <div class="row container">
+
+    <!--                        <button type="button" id="continue-fb-login" class="btn btn-primary btn-facebook btn-login"><i class="bi bi-facebook"></i> Continue with Facebook</button>
+                                <button type="button" id="continue-line-login" data-bs-target="#liffLoginModal" data-bs-toggle="modal" class="btn btn-primary btn-line btn-login" data-bs-dismiss="modal"><i class="bi bi-line"></i> Continue with Line Chat</button>-->
+                                <div class="row">
+                                    <div class="col">
+                                        <a id="continue-fb-login" class="btn btn-primary btn-facebook btn-login" href="https://www.facebook.com/dialog/oauth?response_type=token&amp;client_id=763714192774134&amp;redirect_uri=https%3A%2F%2Fhairbyning.com%2Fauth_oauth%2Fsignin&amp;scope=public_profile,email&amp;state=%7B%22d%22%3A+%22bduongdb%22,+%22p%22%3A+2,+%22r%22%3A+%22https%253A%252F%252Fhairbyning.com%252Fweb%22%7D&amp;nonce=3wgCuh_14vcdRIFm_hhvzA%3D%3D">
+                                            <i class="bi bi-facebook"></i> Log in with Facebook
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col">
+                                        <a id="continue-line-login" class="btn btn-primary btn-line btn-login" href="https://access.line.me/oauth2/v2.1/authorize?response_type=code&amp;client_id=2007896254&amp;redirect_uri=https%3A%2F%2Fhairbyning.com%2Fauth_oauth%2Fsignin&amp;scope=openid+profile+email&amp;state=%7B%22d%22%3A+%22bduongdb%22,+%22p%22%3A+5,+%22r%22%3A+%22https%253A%252F%252Fhairbyning.com%252Fweb%22%7D">
+                                            <i class="bi bi-line"></i> Log in with LINE
+                                        </a>     
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col">
+                                        <button type="button" id="continue-no-login" class="btn btn-primary btn-login" data-bs-dismiss="modal">Continue witout signin</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="continue-logged-in" class="container">
+                            <div class="row">
+                                <div class="col">
+                                    <button type="button" id="continue-logged-in-btn" class="btn btn-primary" data-bs-dismiss="modal">Continue</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
                             <button type="button" id="btn-continue-cancel" class="btn btn-primary" data-bs-dismiss="modal" aria-label="Cancel">Cancel</button>
+                        </div>
                     </div>
                 </div>
             </div>
