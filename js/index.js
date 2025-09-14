@@ -6,7 +6,7 @@ import {
     rpcBus,
 } from "../addons/web/static/src/core/network/rpc.js";
 
-const dbName= 'bduongdb';
+const DBNAME= 'bduongdb';
 
 import BookingOptionsModel from "./models/booking_options.js";
 import BookingOptionsView from "./views/booking_options.js";
@@ -66,33 +66,28 @@ class User {
 
 class LineOauth {
     constructor(){
-        this._baseCallbackURI = window.location.host + '/auth_oauth/signin?';
+        this._baseCallbackURI = `https://${window.location.host}/auth_oauth/signin`;
         this._callbackURI = null;
         this._liffId = '2007896254-Dkr9Yr56';
         this._scope = 'openid+profile+email';
         this._state = {
-            'd': dbName,
-            'p': 5,
-            'r': window.location.host
+            "d": DBNAME, 
+            "p": 5, 
+            "r": "https://${window.location.host}/web"
         }
+        console.log(JSON.stringify(this._state));
         this._setCallbackURI();
     }
     _setCallbackURI(){
-        const params = new URLSearchParams();
-        params.append('scope', this._scope);
-        params.append('state', JSON.stringify(this._state));
-        this._callbackURI = encodeURIComponent(this._baseCallbackURI) + params;
+        const st = JSON.stringify(this._state);
+        this._callbackURI = `${this._baseCallbackURI}&scope=${this._scope}&${this._state}`;
     }
     get callbackURI(){
         return this._callbackURI;
     }
-    async login(){
-        try{
-            await liff.init({liffId: this._liffId});
-            liff.login({redirectUri: this._callbackURI});
-        } catch(error) {
-            console.error("LIFF initialization failed", error);
-        };
+    login(){
+        const loginURL ="https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=2007896254&redirect_uri=https%3A%2F%2Flocal.hairbyning.com%2Fauth_oauth%2Fsignin&scope=openid+profile+email&state=%7B%22d%22%3A+%22bduongdb%22,+%22p%22%3A+5,+%22r%22%3A+%22https%253A%252F%252Flocal.hairbyning.com%252Fweb%22%7D";
+        window.location.href = loginURL;
     }
     async init(){
         try {
@@ -105,7 +100,6 @@ class LineOauth {
             console.error("LIFF initialization failed", error);
         }
     }
-
 }
 
 class LocalStorage{
@@ -137,17 +131,60 @@ class LocalStorage{
 class State {
     constructor(namespace){
         this._urlParameters = null;
-        this._oauth = null;
         this._formElements = null;
         this._redirected = false;
-        this._selects = document.getElementById('select-booking-options').querySelectorAll('.form-control');
+        this._selects = document.getElementById('select-booking-options').elements;
         this._localStorage = new LocalStorage(namespace);
+    }
+    save(){
+        const inputs = [];
+        const selects = [];
+
+        for (const input of this._formElements){
+            inputs.push({
+                name: input.name,
+                value: input.value
+            })
+        }
+        for (const select of this._selects){
+            if(select.classList.contains('form-control')){
+                selects.push({
+                    name: select.name,
+                    value: select.value
+                })
+            }
+        }
+        this._localStorage.write('urlParameters', this._urlParameters);
+        this._localStorage.write('formElements', JSON.stringify(inputs));
+        this._localStorage.write('selects', JSON.stringify(selects));
+        this._localStorage.write('redirected', true);
+    /*    writeToStorage('location', select_elements['location'].value);
+        writeToStorage('service', select_elements['service'].value);
+        writeToStorage('capacity', select_elements['capacity'].value);
+        writeToStorage('date', select_elements['date'].value);*/
+    }
+    restore(){
+        this._urlParameters = this._localStorage.read('urlParameters');
+        this._redirected = this._localStorage.read('redirected');
+        this._formElements = JSON.parse(this._localStorage.read('formElements'));
+        for (const select of JSON.parse(this._localStorage.read('selects'))){
+            console.log(this._selects[select.name]);
+            console.log(select.value);
+            this._selects[select.name].value = select.value;
+        }
+        document.getElementById('booking').scrollIntoView();
+    }
+    isRedirected(){
+        return this._localStorage.read('redirected');
+    }
+    clear(){
+        this._localStorage.clear();
     }
     set urlParameters(urlParams){
         this._urlParameters = urlParams;
     }
     get urlParameters(){
-        return thie._urlParameters;
+        return this._urlParameters;
     }
     set oauth(oauth){
         this._oauth = oauth;
@@ -170,45 +207,6 @@ class State {
     get redirected(){
         return this._redirected;
     }
-    save(){
-        const inputs = [];
-        const selects = [];
-
-        for (const input of this._formElements){
-            inputs.push({
-                name: input.name,
-                value: input.value
-            })
-        }
-        for (const select of this._selects){
-            selects.push({
-                name: select.name,
-                value: select.value
-            })
-        }
-        this._localStorage.write('urlParameters', this._urlParameters);
-        this._localStorage.write('formElements', JSON.stringify(inputs));
-        this._localStorage.write('selects', JSON.stringify(selects));
-        this._localStorage.write('oauth', JSON.stringify(this._oauth));
-        this._localStorage.write('redirected', true);
-    /*    writeToStorage('location', select_elements['location'].value);
-        writeToStorage('service', select_elements['service'].value);
-        writeToStorage('capacity', select_elements['capacity'].value);
-        writeToStorage('date', select_elements['date'].value);*/
-    }
-    restore(){
-        this._urlParameters = this._localStorage.read('urlParameters');
-        this._redirected = this._localStorage.read('redirected');
-        this._formElements = JSON.parse(this._localStorage.read('formElements'));
-        this._oauth = JSON.parse(this._localStorage.read('oauth'));
-        for (const select of JSON.parse(this._localStorage.read('selects'))){
-            this._selects[select.name].value = select.value;
-        }
-        document.getElementById('booking').scrollIntoView();
-    }
-    isRedirected(){
-        return this._localStorage.read('redirected');
-    }
 }
 
 const bookingOptionsModel = new BookingOptionsModel(rpc);
@@ -221,10 +219,10 @@ const bookingOptionsView = new BookingOptionsView([{
 
 const timeSlotsModel = new TimeSlotsModel(rpc);
 const timeSlotsView = new TimeSlotsView([{
-            target: 'booking-modal-body-content',
-            event: 'click',
-            handler: handleSelectTimeSlot
-        }]);
+    target: 'booking-modal-body-content',
+    event: 'click',
+    handler: handleSelectTimeSlot
+}]);
 
 const termsConditionsView = new TermsConditionsView([{
     target: 'terms-conditions-modal',
@@ -255,18 +253,21 @@ const state = new State('HBN');
 
     await whenReady();
 
-
-    if(state.isRedirected()){
-
-    }
-
     bootstrap_init();
 
     bookingOptionsView.update(available_appointments);
 
-    if(readFromStorage('redirected')){
+    if(state.isRedirected()){
+        const lineAuth = new LineOauth();
+        lineAuth.init();
+        state.restore();
         continuePreviousBooking();
     }
+
+
+/*    if(readFromStorage('redirected')){
+        continuePreviousBooking();
+    }*/
 
 /*     document.getElementById('continue-fb-login').addEventListener('click', function(){
         FB.login(function(response) {
@@ -350,7 +351,7 @@ function saveCurrentState(urlParameters, formElements){
             value: input.value
         })
     }
-    const select_elements = document.getElementById('select-booking-options').querySelectorAll('.form-control');
+    const select_elements = document.getElementById('select-booking-options').elements;
     for (const select of select_elements){
         selects.push({
             name: select.name,
@@ -379,7 +380,7 @@ async function continuePreviousBooking(){
         event: 'submit',
         handler: handleBookingFormSubmit
     }]);
-    state.clear();
+//    state.clear();
 }
 
 function handleLogout(event){
