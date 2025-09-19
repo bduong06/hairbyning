@@ -76,6 +76,13 @@
             border-color: #9c27a3;
         }
 
+        .dropdown-toggle-split::after {
+            margin-left: 0;
+            position: absolute;
+            top: 60%;
+            left: 45px;
+        }
+
         /* Header & Hero Section */
         .hero-section {
             background: linear-gradient(rgba(0, 0, 0, .3), rgba(0, 0, 0, .3)), 
