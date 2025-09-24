@@ -17,8 +17,8 @@ import whenReady from "./whenready.js";
 import BookingFormView from "./views/booking_form.js";
 import BookingFormModel from "./models/booking_form.js";
 import ConfirmBookingView from "./views/confirm_booking.js";
-import User from "./models/user.js";
-import { State } from "./models/state.js";
+import State from "./models/state.js";
+import getOauthProvider from "./models/oauth.js"
 
 
 const bookingOptionsModel = new BookingOptionsModel(rpc);
@@ -51,30 +51,38 @@ const confirmBookingView = new ConfirmBookingView([{
     handler: handleLogout
 }]);
 
-const user = new User();
-const state = new State('HBN');
+const state = new State();
 
 (async function startBookingApp(){
 
-    let available_appointments = null;
-    try {
-        available_appointments = await rpc('/hbn/appointment');
-    } catch (error) {
-        console.log("JSON-RPC Error:", error);
-    }
 
+    let available_appointments;
+    if(!state.redirected){
+        try {
+            available_appointments = await rpc('/hbn/appointment');
+        } catch (error) {
+            console.log("JSON-RPC Error:", error);
+        }
+    }
     await whenReady();
 
     bootstrap_init();
 
-    bookingOptionsView.update(available_appointments);
+//        const authProvider = getOauthProvider('line');
+ //       authProvider.init();
+    if(state.oauthProvider){
+        const authProvider = getOauthProvider(state.oauthProvider);
+        authProvider.init();
+    }
 
-    if(state.isRedirected()){
-        state.restore();
+    if(state.redirected){
+        bookingOptionsView.restore(state.bookingOptions);
         if(state.urlParameters){
             continuePreviousBooking();
         }
-
+    } else {
+        console.log('avaible ' + available_appointments);
+        bookingOptionsView.update(available_appointments);
     }
 
 
@@ -103,7 +111,8 @@ async function handleBookingOptionsSubmit(event){
 
 async function handleSelectTimeSlot(event){
     if(event.target.hasAttribute('data-url-parameters')){
-        state.formElements = document.getElementById('time_slots_form').elements;
+        state.bookingOptions = document.getElementById('select-booking-options').innerHTML;
+        state.timeSlotsFormElements = document.getElementById('time_slots_form').innerHTML;
         state.urlParameters = event.target.dataset.urlParameters;
         timeSlotsView.hide();
         termsConditionsView.render();
@@ -115,7 +124,7 @@ async function handleContinueBooking(event){
     switch(event.target.id){
         case "continue-no-login":
             timeSlotsModel.urlParameters = state.urlParameters;
-            timeSlotsModel.formElements = state.formElements;
+            timeSlotsModel.formElements = state.timeSlotsFormElements;
             bookingFormView.show();
             const response = await timeSlotsModel.selectTimeSlot();
             bookingFormView.data = response;
@@ -127,14 +136,21 @@ async function handleContinueBooking(event){
             }]);
             break;
         case "continue-fb-login":
-//            saveCurrentState(urlParameters, formElements);
+            event.preventDefault();
+            const fbAuth = getOauthProvider('facebook');
+            state.oauthProvider = 'facebook';
+            state.redirected = true;
+            state.save();
+            window.location.href = fbAuth.authorize();
             break;
         case "continue-line-login":
             event.preventDefault();
-            user.oauth = new LineOauth();
-            state.oauth = user.oauth;
+            const lineAuth = getOauthProvider('line');
+            state.oauthProvider = 'line';
+//            state.redirected = true;
             state.save();
-            user.login();
+//            window.location.href = lineAuth.authorize();
+            lineAuth.login();
             break;
         case "continue-logged-in-btn":
 
@@ -152,7 +168,7 @@ async function handleBookingFormSubmit(event) {
 
 async function continuePreviousBooking(){
     timeSlotsModel.urlParameters = state.urlParameters;
-    timeSlotsModel.formElements = state.formElements;
+    timeSlotsModel.formElements = state.timeSlotsFormElements;
     bookingFormView.show();
     const response = await timeSlotsModel.selectTimeSlot();
     bookingFormView.data = response;
