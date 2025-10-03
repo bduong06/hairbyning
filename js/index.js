@@ -81,7 +81,7 @@ const state = new State();
             continuePreviousBooking();
         }
     } else {
-        console.log('avaible ' + available_appointments);
+        console.log('avaible ' + JSON.stringify(available_appointments));
         bookingOptionsView.update(available_appointments);
     }
 
@@ -261,5 +261,4 @@ function bootstrap_init(){
             }
         })
     });
-
 }

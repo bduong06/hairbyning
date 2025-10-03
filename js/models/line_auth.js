@@ -32,26 +32,35 @@ export default class LineOauth {
     }
     async init(){
         try {
+            const img = document.getElementById('profile-image');
             await liff.init({liffId: this._liffId });
-            if (liff.isLoggedIn()) {
+            if (liff.isLoggedIn() && (img.src === undefined)) {
                 console.log('isloggedIn')
                 const profile = await liff.getProfile();
-                const img = document.getElementById('profile-image');
                 img.src = profile.pictureUrl;
-                const idToken = liff.getIDToken();
-                const accessToken = liff.getAccessToken();
-                const response = await this._odoo_signin(idToken, accessToken);
+                this._installLogoutHandler();
+                this._odoo_signin(idToken, accessToken);
 //                user.profile = profile;
                 console.log(response);
+                document.getElementById('user-logged-in').classList.remove('d-none');
             } 
         } catch (error) {
             console.error("LIFF initialization failed: ", error);
         }
     }
-    async _odoo_signin(idToken, accessToken){
+    _installLogoutHandler(){
+        document.getElementById('user-logged-in').addEventListener('click', function(event){
+            if(event.target.id === 'user-logout'){
+                event.preventDefault();
+                liff.logout();
+                document.getElementById('user-logged-in').classList.add('d-none');
+            }
+        })
+    }
+    async _odoo_signin(){
         try {
- //           const idToken = localStorage.getItem(this._liffIDTokenKey);
-//            const accessToken = localStorage.getItem(this._liffaccessTokenKey);
+            const idToken = liff.getIDToken();
+            const accessToken = liff.getAccessToken();
             const params = {
                 state: JSON.stringify(this._state),
                 id_token: idToken,
