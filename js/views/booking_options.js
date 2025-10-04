@@ -75,7 +75,16 @@ export default class BookingOptionsView {
         }
     }
     restore(html){
-        this.form.innerHTML = html;
+        const formElements = this.form.elements;
+        const elements = JSON.parse(sessionStorage.getItem('elements'));
+        const values = JSON.parse(sessionStorage.getItem('values'));
+        elements.forEach((elem) => {
+            formElements[elem.name].innerHTML = elem.html;
+        })
+        for (let name in values) {
+            formElements[name].value = values[name];
+        }
+        
         document.getElementById('booking').scrollIntoView();
     }
 }

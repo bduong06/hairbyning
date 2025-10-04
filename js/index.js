@@ -54,8 +54,6 @@ const confirmBookingView = new ConfirmBookingView([{
 const state = new State();
 
 (async function startBookingApp(){
-
-
     let available_appointments;
     if(!state.redirected){
         try {
@@ -66,22 +64,19 @@ const state = new State();
     }
     await whenReady();
 
-    bootstrap_init();
-
-//        const authProvider = getOauthProvider('line');
- //       authProvider.init();
     if(state.oauthProvider){
         const authProvider = getOauthProvider(state.oauthProvider);
         authProvider.init();
     }
 
+    bootstrap_init();
+
     if(state.redirected){
-        bookingOptionsView.restore(state.bookingOptions);
+        bookingOptionsView.restore();
         if(state.urlParameters){
             continuePreviousBooking();
         }
     } else {
-        console.log('avaible ' + JSON.stringify(available_appointments));
         bookingOptionsView.update(available_appointments);
     }
 
@@ -111,9 +106,8 @@ async function handleBookingOptionsSubmit(event){
 
 async function handleSelectTimeSlot(event){
     if(event.target.hasAttribute('data-url-parameters')){
-        state.bookingOptions = document.getElementById('select-booking-options').innerHTML;
-        state.timeSlotsFormElements = document.getElementById('time_slots_form').innerHTML;
-        state.urlParameters = event.target.dataset.urlParameters;
+        timeSlotsModel.urlParameters = event.target.dataset.urlParameters;
+        timeSlotsModel.formElements = this.querySelector('#time_slots_form').elements;
         timeSlotsView.hide();
         termsConditionsView.render();
     }
@@ -123,8 +117,6 @@ async function handleSelectTimeSlot(event){
 async function handleContinueBooking(event){
     switch(event.target.id){
         case "continue-no-login":
-            timeSlotsModel.urlParameters = state.urlParameters;
-            timeSlotsModel.formElements = state.timeSlotsFormElements;
             bookingFormView.show();
             const response = await timeSlotsModel.selectTimeSlot();
             bookingFormView.data = response;
@@ -147,9 +139,7 @@ async function handleContinueBooking(event){
             event.preventDefault();
             const lineAuth = getOauthProvider('line');
             state.oauthProvider = 'line';
-//            state.redirected = true;
-            state.save();
-//            window.location.href = lineAuth.authorize();
+            state.redirected = true;
             lineAuth.login();
             break;
         case "continue-logged-in-btn":
@@ -167,9 +157,8 @@ async function handleBookingFormSubmit(event) {
 }
 
 async function continuePreviousBooking(){
-    timeSlotsModel.urlParameters = state.urlParameters;
-    timeSlotsModel.formElements = state.timeSlotsFormElements;
     bookingFormView.show();
+    timeSlotsModel.restore();
     const response = await timeSlotsModel.selectTimeSlot();
     bookingFormView.data = response;
     bookingFormView.render();

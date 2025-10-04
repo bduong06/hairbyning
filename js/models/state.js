@@ -34,6 +34,7 @@ export default class State {
     }
     set urlParameters(urlParams){
         this._urlParameters = urlParams;
+        sessionStorage.setItem('urlParameters', this._urlParameters);
     }
     get urlParameters(){
         if(this._urlParameters){
@@ -44,6 +45,7 @@ export default class State {
     }
     set timeSlotsFormElements(formElements){
         this._timeSlotsFormElements = formElements;
+        sessionStorage.setItem('timeSlotsFormElements', this._timeSlotsFormElements);
     }
     get timeSlotsFormElements(){
         if(this._timeSlotsFormElements){
@@ -54,6 +56,7 @@ export default class State {
     }
     set bookingOptions(bookingOptions){
         this._bookingOptions = bookingOptions;
+        sessionStorage.setItem('bookingOptions', this._bookingOptions);
     }
     get bookingOptions(){
         if(this._bookingOptions){
@@ -64,6 +67,7 @@ export default class State {
     }
     set redirected(redirected){
         this._redirected = redirected;
+        sessionStorage.setItem('redirected', this._redirected);
     }
     get redirected(){
         if(this._redirected){
@@ -74,6 +78,7 @@ export default class State {
     }
     set oauthProvider(oauthProvider){
         this._oauthProvider = oauthProvider;
+        sessionStorage.setItem('oauthProvider', this._oauthProvider);
     }
     get oauthProvider(){
         if(this._oauthProvider){
