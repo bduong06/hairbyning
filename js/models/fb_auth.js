@@ -59,12 +59,13 @@ export default class FbOauth {
             if(response.auth_info){
                 FB.api("/me", {fields: "id,name,picture"}, function(response) {
                     const img = document.getElementById('profile-image');
-                    img.src = profile.pictureUrl;
+                    img.src = response.picture.data.url;
+                    console.log(JSON.stringify(response));
                     this._installLogoutHandler();
                     const userLoggedIn = document.getElementById('user-logged-in');
                     userLoggedIn.classList.remove('d-none');
                     callback();
-                });
+                }.bind(this));
             } else {
                 FB.logout();
             }
