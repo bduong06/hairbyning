@@ -10,6 +10,19 @@ export default class TermsConditionsView {
         this.installHandlers(handlers);
     }
     render(){
+        const userLoggedIn = document.getElementById('user-logged-in');
+        const buttons = document.getElementById('terms-conditions-modal').querySelectorAll('.not-logged-in');
+        if(userLoggedIn.classList.contains('d-none')){
+            for(const btn of buttons){
+                btn.classList.remove('d-none');
+            }
+            document.getElementById('continue-logged-in-btn').classList.add('d-none');
+        } else{
+            for(const btn of buttons){
+                btn.classList.add('d-none');
+            }
+            document.getElementById('continue-logged-in-btn').classList.remove('d-none');
+        }
         this._modalContent.innerHTML = terms_conditions;
         this._modal.show();
     }

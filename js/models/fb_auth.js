@@ -1,3 +1,4 @@
+import { rpc } from "../../addons/web/static/src/core/network/rpc.js";
 
 export default class FbOauth {
     constructor(config){
@@ -31,6 +32,54 @@ export default class FbOauth {
                 FB.api("/me", {fields: "id,name,picture"}, function(response) {
                     user.profile = response;
                 });
+            }
+        })
+    }
+    login(callback){
+        FB.login( (response) => {
+            if (response.authResponse) {
+                const access_token = encodeURIComponent(response.authResponse.accessToken);
+                const data_access_expiration_time = encodeURIComponent(response.authResponse.expiration_time);
+                const expires_in = encodeURIComponent(response.authResponse.expires_in);
+                const params = {
+                    access_token: access_token,
+                    data_access_expiration_time: data_access_expiration_time,
+                    expires_in: expires_in,
+                    state: JSON.stringify(this._state)
+                };
+                this._odoo_signin(callback, params);
+            } else {
+                console.log('User cancelled login or did not fully authorize.');
+            }
+        }, {scope: this._scope});
+    }
+    async _odoo_signin(callback, params){
+        try {
+            const response = await rpc('/hbn/auth_oauth/signin', params);
+            if(response.auth_info){
+                FB.api("/me", {fields: "id,name,picture"}, function(response) {
+                    const img = document.getElementById('profile-image');
+                    img.src = profile.pictureUrl;
+                    this._installLogoutHandler();
+                    const userLoggedIn = document.getElementById('user-logged-in');
+                    userLoggedIn.classList.remove('d-none');
+                    callback();
+                });
+            } else {
+                FB.logout();
+            }
+            return response;
+        } catch (error) {
+            console.log("JSON-RPC Error: _odoo_signin: ", error);
+        }
+    }
+    _installLogoutHandler(){
+        document.getElementById('user-logged-in').addEventListener('click', function(event){
+            if(event.target.id === 'user-logout'){
+                event.preventDefault();
+                FB.logout();
+                rpc('/web/session/destroy');
+                document.getElementById('user-logged-in').classList.add('d-none');
             }
         })
     }

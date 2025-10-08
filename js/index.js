@@ -54,30 +54,29 @@ const confirmBookingView = new ConfirmBookingView([{
 const state = new State();
 
 (async function startBookingApp(){
-    let available_appointments;
-    if(!state.redirected){
-        try {
-            available_appointments = await rpc('/hbn/appointment');
-        } catch (error) {
-            console.log("JSON-RPC Error:", error);
-        }
-    }
     await whenReady();
-
-    if(state.oauthProvider){
-        const authProvider = getOauthProvider(state.oauthProvider);
-        authProvider.init();
-    }
 
     bootstrap_init();
 
-    if(state.redirected){
-        bookingOptionsView.restore();
-        if(state.urlParameters){
-            continuePreviousBooking();
+    let searchParams;
+    if((searchParams = window.location.search)){
+        console.log(searchParams);
+        if(searchParams.includes('liffClientId')){
+            const authProvider = getOauthProvider('line');
+            await authProvider.init();
+            if(state.urlParameters){
+                bookingOptionsView.restore();
+                timeSlotsModel.restore();
+                selectTimeSlot();
+            }
         }
     } else {
-        bookingOptionsView.update(available_appointments);
+        try {
+            const available_appointments = await rpc('/hbn/appointment');
+            bookingOptionsView.update(available_appointments);
+        } catch (error) {
+            console.log("JSON-RPC Error:", error);
+        }
     }
 
 
@@ -114,44 +113,43 @@ async function handleSelectTimeSlot(event){
 
 }
 
-async function handleContinueBooking(event){
+function handleContinueBooking(event){
     switch(event.target.id){
-        case "continue-no-login":
-            bookingFormView.show();
-            const response = await timeSlotsModel.selectTimeSlot();
-            bookingFormView.data = response;
-            bookingFormView.render();
-            bookingFormView.installHandlers([{
-                target: 'booking-form',
-                event: 'submit',
-                handler: handleBookingFormSubmit
-            }]);
-            break;
         case "continue-fb-login":
             event.preventDefault();
             const fbAuth = getOauthProvider('facebook');
-            state.oauthProvider = 'facebook';
-            state.redirected = true;
-            state.save();
-            window.location.href = fbAuth.authorize();
+            fbAuth.login(selectTimeSlot);
             break;
         case "continue-line-login":
             event.preventDefault();
             const lineAuth = getOauthProvider('line');
-            state.oauthProvider = 'line';
-            state.redirected = true;
             lineAuth.login();
             break;
+        case "continue-no-login":
         case "continue-logged-in-btn":
-
+            event.preventDefault();
+            selectTimeSlot();
+            break;
     }
+}
+
+async function selectTimeSlot(){
+    bookingFormView.show();
+    const response = await timeSlotsModel.selectTimeSlot();
+    bookingFormView.data = response;
+    bookingFormView.render();
+    bookingFormView.installHandlers([{
+        target: 'booking-form',
+        event: 'submit',
+        handler: handleBookingFormSubmit
+    }]);
 }
 
 async function handleBookingFormSubmit(event) {
         event.preventDefault()
         bookingFormModel.formElements = document.getElementById('booking-form').elements;
         confirmBookingView.show();
-        const response = bookingFormModel.submit();
+        const response = await bookingFormModel.submit();
         confirmBookingView.data = response;
         confirmBookingView.render();
 }

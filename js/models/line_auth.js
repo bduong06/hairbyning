@@ -9,9 +9,6 @@ export default class LineOauth {
         this._liffId = config.liffId;
         this._scope = config.scope;
         this._state = config.state;
-        this._liffIDTokenKey = `LIFF_STORE:${config.liffId}:IDToken`;
-        this._liffaccessTokenKey = `LIFF_STORE:${config.liffId}:accessToken`;
-        this._liffState = document.getElementById('csrf_token').value;
     }
     authorize(){
         const redirectParams = new URLSearchParams({
@@ -31,7 +28,7 @@ export default class LineOauth {
 
     }
     async init(){
-        const userLoggedIn = document.getElementById('user-logged-in');
+/*        const userLoggedIn = document.getElementById('user-logged-in');
         try {
             const img = document.getElementById('profile-image');
             await liff.init({
@@ -50,7 +47,24 @@ export default class LineOauth {
         } catch (error) {
             userLoggedIn.classList.remove('d-none');
             console.error("LIFF initialization failed: ", error);
-        }
+        }*/
+        if (liff.isLoggedIn()) {
+            if(window.location.search){
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+            const response = await this._odoo_signin();
+            if(response.auth_info){
+                const img = document.getElementById('profile-image');
+                const profile = await liff.getProfile();
+                img.src = profile.pictureUrl;
+                this._installLogoutHandler();
+                const userLoggedIn = document.getElementById('user-logged-in');
+                userLoggedIn.classList.remove('d-none');
+            } else {
+                liff.logout();
+            }
+            return response;
+        } 
     }
     _installLogoutHandler(){
         document.getElementById('user-logged-in').addEventListener('click', function(event){
@@ -64,27 +78,20 @@ export default class LineOauth {
     }
     async _odoo_signin(){
         try {
-            const session_info = await rpc('/web/session/get_session_info');
+            const idToken = liff.getIDToken();
+            const accessToken = liff.getAccessToken();
+            const params = {
+                state: JSON.stringify(this._state),
+                id_token: idToken,
+                access_token: accessToken
+            };
+            const response = await rpc('/hbn/auth_oauth/signin', params);
+            return response;
         } catch (error) {
-            if(error.code == 100) {
-                try {
-                    const idToken = liff.getIDToken();
-                    const accessToken = liff.getAccessToken();
-                    const params = {
-                        state: JSON.stringify(this._state),
-                        id_token: idToken,
-                        access_token: accessToken
-                    };
-                    const response = await rpc('/hbn/auth_oauth/signin', params);
-                    console.log(response.session_info + response.auth_info);
-                } catch (error) {
-                    console.log("JSON-RPC Error: _odoo_signin: ", error);
-                }
-            } else {
-                console.log("JSON-RPC Error: get_session_info", error);
-            }
+            console.log("JSON-RPC Error: _odoo_signin: ", error);
         }
     }
+
     async _get_session_info(){
         try {
             const session_info = await rpc('/web/session/get_session_info');
