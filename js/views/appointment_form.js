@@ -26,7 +26,7 @@ const appointment_form = `
                 <div class="row mb-4">
                     <div class="col-sm-9">
                         <label class="col-sm-3 col-form-label fw-normal" for="email_field">Email*</label>
-                        <input type="email" class="form-control" id="email_field" name="email" required="1" placeholder="e.g. john.smith@example.com" value="<%= email %>">
+                        <input type="hidden" class="form-control" id="email_field" name="email" placeholder="e.g. john.smith@example.com" value="<%= email %>">
                     </div>
                 </div>
                 <div class="row mb-4">

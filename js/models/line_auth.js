@@ -28,43 +28,33 @@ export default class LineOauth {
 
     }
     async init(){
-/*        const userLoggedIn = document.getElementById('user-logged-in');
-        try {
-            const img = document.getElementById('profile-image');
-            await liff.init({
-                liffId: this._liffId,
-            });
-            if (liff.isLoggedIn()) {
-                if(window.location.search){
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                }
-                const profile = await liff.getProfile();
-                img.src = profile.pictureUrl;
-                userLoggedIn.classList.remove('d-none');
-                this._installLogoutHandler();
-                this._odoo_signin();
-            } 
-        } catch (error) {
-            userLoggedIn.classList.remove('d-none');
-            console.error("LIFF initialization failed: ", error);
-        }*/
         if (liff.isLoggedIn()) {
             if(window.location.search){
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
-            const response = await this._odoo_signin();
-            if(response.auth_info){
-                const img = document.getElementById('profile-image');
-                const profile = await liff.getProfile();
-                img.src = profile.pictureUrl;
-                this._installLogoutHandler();
-                const userLoggedIn = document.getElementById('user-logged-in');
-                userLoggedIn.classList.remove('d-none');
-            } else {
-                liff.logout();
+            if(this._isLoggedInOdoo()){
+                const response = await this._odoo_signin();
+                if(response.auth_info){
+                    const img = document.getElementById('profile-image');
+                    const profile = await liff.getProfile();
+                    img.src = profile.pictureUrl;
+                    this._installLogoutHandler();
+                    const userLoggedIn = document.getElementById('user-logged-in');
+                    userLoggedIn.classList.remove('d-none');
+                } else {
+                    liff.logout();
+                    console.log("JSON-RPC Error: _odoo_signin: ", response.error);
+                }
             }
-            return response;
         } 
+    }
+    async _isLoggedInOdoo() {
+        try {
+            await rpc("/web/session/check");
+            return true;
+        } catch {
+            return false;
+        }
     }
     _installLogoutHandler(){
         document.getElementById('user-logged-in').addEventListener('click', function(event){

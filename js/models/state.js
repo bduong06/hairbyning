@@ -27,7 +27,6 @@ class SessionStorage{
 export default class State {
     constructor(){
         this._urlParameters = null;
-        this._oauthProvider = null;
         this._timeSlotsFormElements = null;
         this._redirected = false;
         this._bookingOptions = null;
@@ -76,23 +75,11 @@ export default class State {
             return JSON.parse(sessionStorage.getItem('redirected'));
         }
     }
-    set oauthProvider(oauthProvider){
-        this._oauthProvider = oauthProvider;
-        sessionStorage.setItem('oauthProvider', this._oauthProvider);
-    }
-    get oauthProvider(){
-        if(this._oauthProvider){
-            return this._oauthProvider;
-        } else {
-            return sessionStorage.getItem('oauthProvider');
-        }
-    }
     save(){
         sessionStorage.setItem('urlParameters', this._urlParameters);
         sessionStorage.setItem('timeSlotsFormElements', this._timeSlotsFormElements);
         sessionStorage.setItem('bookingOptions', this._bookingOptions);
         sessionStorage.setItem('redirected', this._redirected);
-        sessionStorage.setItem('oauthProvider', this._oauthProvider);
     /*    writeToStorage('location', select_elements['location'].value);
         writeToStorage('service', select_elements['service'].value);
         writeToStorage('capacity', select_elements['capacity'].value);
@@ -103,18 +90,15 @@ export default class State {
         this._timeSlotsFormElements = sessionStorage.getItem('timeSlotsFormElements');
         this._bookingOptions = sessionStorage.getItem('bookingOptions');
         this._redirected = JSON.parse(sessionStorage.getItem('redirected'));
-        this._oauthProvider = sessionStorage.getItem('oauthProvider');
-        document.getElementById('booking').scrollIntoView();
+    //    window.location.hash = "#booking";
     }
     clear(){
         sessionStorage.removeItem('urlParameters');
         sessionStorage.removeItem('timeSlotsFormElements');
         sessionStorage.removeItem('bookingOptions');
         sessionStorage.removeItem('redirected');
-        sessionStorage.removeItem('oauthProvider');
 
         this._urlParameters = null;
-        this._oauthProvider = null;
         this._timeSlotsFormElements = null;
         this._redirected = false;
         this._bookingOptions = null;

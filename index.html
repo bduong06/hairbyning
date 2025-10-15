@@ -42,12 +42,13 @@
                 <h1>Welcome to Hair By Ning</h1>
                 <p>We specialize in hair coloring.  Get the color you want today!</p>
                 <a href="#booking" class="btn btn-primary" role="button">Book an Appointment</a>
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#terms-conditions-modal">
+<!--                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#terms-conditions-modal"> 
                 Launch Terms and Conditions
-                </button>
+                </button> -->
             </div>
         </section>
         <!-- Services Section -->
+        <div class="container">
         <section id="services" class="text-center">
             <h1>Our Services</h1>
             <div class="container">
@@ -452,12 +453,9 @@
                         </div>
                         <div class="container text-center">
                             <div class="d-grid gap-2 col-6 mx-auto">
-                                <a id="continue-fb-login" class="btn btn-primary btn-facebook not-logged-in" href="https://www.facebook.com/dialog/oauth?response_type=token&amp;client_id=763714192774134&amp;redirect_uri=https%3A%2F%2Fhairbyning.com%2Fauth_oauth%2Fsignin&amp;scope=public_profile,email&amp;state=%7B%22d%22%3A+%22bduongdb%22,+%22p%22%3A+2,+%22r%22%3A+%22https%253A%252F%252Fhairbyning.com%252Fweb%22%7D&amp;nonce=3wgCuh_14vcdRIFm_hhvzA%3D%3D">
-                                    <i class="bi bi-facebook"></i> Log in with Facebook
-                                </a>
-                                <a id="continue-line-login" class="btn btn-primary btn-line not-logged-in" href="#">
-                                    <i class="bi bi-line"></i> Log in with LINE
-                                </a>     
+<!--                                <a id="continue-fb-login" class="btn btn-primary btn-facebook not-logged-in" href="https://www.facebook.com/dialog/oauth?response_type=token&amp;client_id=763714192774134&amp;redirect_uri=https%3A%2F%2Fhairbyning.com%2Fauth_oauth%2Fsignin&amp;scope=public_profile,email&amp;state=%7B%22d%22%3A+%22bduongdb%22,+%22p%22%3A+2,+%22r%22%3A+%22https%253A%252F%252Fhairbyning.com%252Fweb%22%7D&amp;nonce=3wgCuh_14vcdRIFm_hhvzA%3D%3D"></a> -->
+                                <button type="button" id="continue-fb-login" class="btn btn-primary btn-facebook not-logged-in" data-bs-dismiss="modal"><i class="bi bi-facebook"></i> Log in with Facebook</button> 
+                                <button type="button" id="continue-line-login" class="btn btn-primary btn-line not-logged-in" data-bs-dismiss="modal"> <i class="bi bi-line"></i> Log in with LINE</button>
                                 <button type="button" id="continue-no-login" class="btn btn-outline-primary not-logged-in" data-bs-dismiss="modal">Continue witout signin</button>
                                 <button type="button" id="continue-logged-in-btn" class="btn btn-outline-dark logged-in" data-bs-dismiss="modal">Continue</button>
                                 <button type="button" id="btn-continue-cancel" class="btn btn-outline-danger" data-bs-dismiss="modal" aria-label="Cancel">Cancel</button>
@@ -481,8 +479,8 @@
                     <div class="col-sm-7">
                         <div class="row">
                             <div class="col-sm-6 form-group">
-                                <input class="form-control" id="name" name="name" placeholder="Name" type="text" required> </div> <div class="col-sm-6 form-group">
-                                <input class="form-control" id="email" name="email" placeholder="Email" type="email" required>
+                                <input class="form-control" id="name" name="name" placeholder="Name" type="text" autocomplete="off" required> 
+                                <input class="form-control" id="email" name="email" placeholder="Email" type="email"  autocomplete="off" required>
                             </div>
                         </div>
                         <textarea class="form-control" id="comments" name="comments" placeholder="Comment" rows="5"></textarea><br>
@@ -503,6 +501,7 @@
                 <img src="images/map.jpg" style="width:100%">
             </div>
         </section>
+        </div>
         <!-- Footer -->
         <footer>
             <div class="social-links">

@@ -56,7 +56,6 @@ export default class BookingFormView {
     }
     installHandlers(handlers){
         handlers.forEach((handler) => {
-            console.log(handler);
             document.getElementById(`${handler.target}`).addEventListener(handler.event, handler.handler);
         })
     }

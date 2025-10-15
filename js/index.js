@@ -54,6 +54,9 @@ const confirmBookingView = new ConfirmBookingView([{
 const state = new State();
 
 (async function startBookingApp(){
+
+    checkLoginState();
+
     await whenReady();
 
     bootstrap_init();
@@ -61,12 +64,12 @@ const state = new State();
     let searchParams;
     if((searchParams = window.location.search)){
         console.log(searchParams);
+        timeSlotsModel.restore();
         if(searchParams.includes('liffClientId')){
             const authProvider = getOauthProvider('line');
             await authProvider.init();
             if(state.urlParameters){
                 bookingOptionsView.restore();
-                timeSlotsModel.restore();
                 selectTimeSlot();
             }
         }
@@ -92,6 +95,14 @@ const state = new State();
      });*/
 })();
 
+async function checkLoginState(){
+    const authLoggedIn = state.authLoggedIn;
+    if(authLoggedIn) {
+        const authProvider = getOauthProvider(authLoggedIn);
+        authProvider.init();
+    }
+}
+
 async function handleBookingOptionsSubmit(event){
     event.preventDefault();
     const date = this.elements['date'].value;
@@ -110,7 +121,6 @@ async function handleSelectTimeSlot(event){
         timeSlotsView.hide();
         termsConditionsView.render();
     }
-
 }
 
 function handleContinueBooking(event){

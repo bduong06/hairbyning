@@ -27,13 +27,21 @@ export default class FbOauth {
 
     }
     async init(){
-        FB.getLoginStatus(function(response) {
+        FB.getLoginStatus(async function(response) {
             if (response.status === 'connected') {
                 FB.api("/me", {fields: "id,name,picture"}, function(response) {
-                    user.profile = response;
-                });
+                    this._changeLoginStatus(response);
+                }.bind(this));
             }
         })
+    }
+    async _isLoggedInOdoo() {
+        try {
+            await rpc("/web/session/check");
+            return true;
+        } catch {
+            return false;
+        }
     }
     login(callback){
         FB.login( (response) => {
@@ -58,21 +66,25 @@ export default class FbOauth {
             const response = await rpc('/hbn/auth_oauth/signin', params);
             if(response.auth_info){
                 FB.api("/me", {fields: "id,name,picture"}, function(response) {
-                    const img = document.getElementById('profile-image');
-                    img.src = response.picture.data.url;
-                    console.log(JSON.stringify(response));
-                    this._installLogoutHandler();
-                    const userLoggedIn = document.getElementById('user-logged-in');
-                    userLoggedIn.classList.remove('d-none');
+                    this._changeLoginStatus(response);
                     callback();
                 }.bind(this));
             } else {
                 FB.logout();
+                console.log("JSON-RPC Error: _odoo_signin: ", response.error);
             }
             return response;
         } catch (error) {
             console.log("JSON-RPC Error: _odoo_signin: ", error);
         }
+    }
+    _changeLoginStatus(response){
+        const img = document.getElementById('profile-image');
+        img.src = response.picture.data.url;
+        console.log(JSON.stringify(response));
+        this._installLogoutHandler();
+        const userLoggedIn = document.getElementById('user-logged-in');
+        userLoggedIn.classList.remove('d-none');
     }
     _installLogoutHandler(){
         document.getElementById('user-logged-in').addEventListener('click', function(event){
