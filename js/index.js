@@ -61,18 +61,10 @@ const state = new State();
 
     bootstrap_init();
 
-    let searchParams;
-    if((searchParams = window.location.search)){
-        console.log(searchParams);
-        timeSlotsModel.restore();
-        if(searchParams.includes('liffClientId')){
-            const authProvider = getOauthProvider('line');
-            await authProvider.init();
-            if(state.urlParameters){
-                bookingOptionsView.restore();
-                selectTimeSlot();
-            }
-        }
+    const searchParams = window.location.search;
+    if(searchParams.includes('liffClientId')){
+        bookingOptionsView.restore();
+        bookingOptionsSubmit();
     } else {
         try {
             const available_appointments = await rpc('/hbn/appointment');
@@ -103,13 +95,16 @@ async function checkLoginState(){
     }
 }
 
-async function handleBookingOptionsSubmit(event){
+function handleBookingOptionsSubmit(event){
     event.preventDefault();
     const date = this.elements['date'].value;
     bookingOptionsModel.formElements = this.elements;
+    termsConditionsView.render();
+}
+
+async function bookingOptionsSubmit(){
     timeSlotsView.show();
     const response = await bookingOptionsModel.submit();
-    response.date = date;
     timeSlotsView.data = response;
     timeSlotsView.render();
 }
@@ -128,7 +123,7 @@ function handleContinueBooking(event){
         case "continue-fb-login":
             event.preventDefault();
             const fbAuth = getOauthProvider('facebook');
-            fbAuth.login(selectTimeSlot);
+            fbAuth.login(bookingOptionsSubmit);
             break;
         case "continue-line-login":
             event.preventDefault();
@@ -138,7 +133,7 @@ function handleContinueBooking(event){
         case "continue-no-login":
         case "continue-logged-in-btn":
             event.preventDefault();
-            selectTimeSlot();
+            bookingOptionsSubmit();
             break;
     }
 }

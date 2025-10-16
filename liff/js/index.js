@@ -1,7 +1,8 @@
+import { rpc } from "../../addons/web/static/src/core/network/rpc.js";
 import whenReady from "../../js/whenready.js";
 const dbName = "bduongdb";
 
-whenReady().then(() => {
+whenReady().then(async() => {
     const urlParams = new URLSearchParams();
     const r = `https://${window.location.host}/web`;
     const _state = {
@@ -9,6 +10,10 @@ whenReady().then(() => {
         'p': 5,
         'r': r
     }
+
+    const response = await rpc("/web/session/check");
+    console.log('web/session/check: ' + response);
+    
 
     urlParams.append('state', JSON.stringify(_state));
     const urlString = urlParams.toString();
