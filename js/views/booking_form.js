@@ -51,6 +51,10 @@ export default class BookingFormView {
         this._modal.show();
         this._spinner.classList.remove('d-none');
     }
+    clear(){
+        this._modalContent.innerHTML = null;
+        this._spinner.classList.remove('d-none');
+    }
     hide(){
         this._modal.hide();
     }

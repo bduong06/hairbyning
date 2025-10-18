@@ -1,3 +1,4 @@
+import State from "../models/state.js";
 
 export default class BookingOptionsView {
     constructor(handlers){
@@ -18,6 +19,7 @@ export default class BookingOptionsView {
             minDate: new Date()
         }); 
         this.installHandlers(this.handlers);
+        this._state = new State('HBN');
     }
     installHandlers(handlers){
         console.log(handlers);
@@ -74,17 +76,16 @@ export default class BookingOptionsView {
             }
         }
     }
-    restore(html){
+    restore(){
         const formElements = this.form.elements;
-        const elements = JSON.parse(sessionStorage.getItem('elements'));
-        const values = JSON.parse(sessionStorage.getItem('values'));
+        const elements = JSON.parse(this._state.optionsFormElements);
+        const values = JSON.parse(this._state.optionsFormValues);
         elements.forEach((elem) => {
             formElements[elem.name].innerHTML = elem.html;
         })
         for (let name in values) {
             formElements[name].value = values[name];
         }
-        
-        document.getElementById('booking').scrollIntoView();
+        return formElements;
     }
 }

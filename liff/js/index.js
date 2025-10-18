@@ -11,6 +11,12 @@ whenReady().then(async() => {
         'r': r
     }
 
+    const queryString = window.location.search;
+    if(queryString){
+        console.log('queryString is ', queryString);
+    } else {
+        console.log('queryString is empty');
+    }
     const response = await rpc("/web/session/check");
     console.log('web/session/check: ' + response);
     

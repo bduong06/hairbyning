@@ -1,106 +1,113 @@
-class SessionStorage{
+class LocalStorage{
     constructor(namespace){
         this._nameSpace = namespace;
     }
     clear(){
-        sessionStorage.setItem(this._nameSpace, JSON.stringify({}));
+        localStorage.setItem(this._nameSpace, JSON.stringify({}));
     }
-    write(key, value){
-        const serializedData = sessionStorage.getItem(this._nameSpace);
+    setItem(key, value){
+        const serializedData = localStorage.getItem(this._nameSpace);
         const data = serializedData ? JSON.parse(serializedData) : {};
         data[key] = value;
-        sessionStorage.setItem(this._nameSpace, JSON.stringify(data));
+        localStorage.setItem(this._nameSpace, JSON.stringify(data));
     }
-    read(key){
-        const serializedData = sessionStorage.getItem(this._nameSpace);
+    getItem(key){
+        const serializedData = localStorage.getItem(this._nameSpace);
         const data = JSON.parse(serializedData);
         return data ? data[key] : undefined;
     }
-    remove(key){
-        const serializedData = sessionStorage.getItem(this._nameSpace);
+    removeItem(key){
+        const serializedData = localStorage.getItem(this._nameSpace);
         const data = serializedData ? JSON.parse(serializedData) : {};
         delete data[key];
-        sessionStorage.setItem(this._nameSpace, JSON.stringify(data));
+        localStorage.setItem(this._nameSpace, JSON.stringify(data));
     }
 }
 
 export default class State {
-    constructor(){
+    constructor(namespace){
         this._urlParameters = null;
-        this._timeSlotsFormElements = null;
-        this._redirected = false;
-        this._bookingOptions = null;
+        this._optionsFormElements = null;
+        this._optionsFormValues = null;
+        this._authLoggedIn = null;
+        this._localStorage = new LocalStorage(namespace);
+    }
+    get authLoggedIn() {
+        return this._localStorage.getItem('authLoggedIn');
+    }
+    set authLoggedIn(provider) {
+        this._localStorage.setItem('authLoggedIn', provider);
     }
     set urlParameters(urlParams){
         this._urlParameters = urlParams;
-        sessionStorage.setItem('urlParameters', this._urlParameters);
+        this._localStorage.setItem('urlParameters', this._urlParameters);
     }
     get urlParameters(){
-        if(this._urlParameters){
-            return this._urlParameters;
-        } else {
-            return sessionStorage.getItem('urlParameters');
+        return this._localStorage.getItem('urlParameters');
+    }
+    get optionsFormValues() {
+        return this._localStorage.getItem('optionsFormValues');
+    }
+    set optionsFormValues(values) {
+        this._localStorage.setItem('optionsFormValues', values);
+    }
+    get optionsFormElements(){
+        return this._localStorage.getItem('optionsFormElements');
+    }
+    set optionsFormElements(formElements) {
+        const elements = [{
+            'name': 'location',
+            'html':  formElements['location'].innerHTML
+        },{
+            'name': 'service',
+            'html': formElements['service'].innerHTML
+        },{
+            'name': 'capacity',
+            'html': formElements['capacity'].innerHTML,
+
+        }]
+        const values = {
+            'location': formElements['location'].value,
+            'service': formElements['service'].value,
+            'capacity': formElements['capacity'].value,
+            'date': formElements['date'].value
         }
+        this._localStorage.setItem('optionsFormElements', JSON.stringify(elements));
+        this._localStorage.setItem('optionsFormValues', JSON.stringify(values));
+
     }
     set timeSlotsFormElements(formElements){
         this._timeSlotsFormElements = formElements;
-        sessionStorage.setItem('timeSlotsFormElements', this._timeSlotsFormElements);
+        this._localStorage.setItem('timeSlotsFormElements', this._timeSlotsFormElements);
     }
     get timeSlotsFormElements(){
-        if(this._timeSlotsFormElements){
-            return this._timeSlotsFormElements;
-        } else {
-            return sessionStorage.getItem('timeSlotsFormElements');
-        }
-    }
-    set bookingOptions(bookingOptions){
-        this._bookingOptions = bookingOptions;
-        sessionStorage.setItem('bookingOptions', this._bookingOptions);
-    }
-    get bookingOptions(){
-        if(this._bookingOptions){
-            return this._bookingOptions;
-        } else {
-            return sessionStorage.getItem('bookingOptions');
-        }
+        return this._localStorage.getItem('timeSlotsFormElements');
     }
     set redirected(redirected){
-        this._redirected = redirected;
-        sessionStorage.setItem('redirected', this._redirected);
+        this._localStorage.setItem('redirected', this._redirected);
     }
     get redirected(){
-        if(this._redirected){
-            return this._redirected;
-        } else {
-            return JSON.parse(sessionStorage.getItem('redirected'));
-        }
+        return JSON.parse(this._localStorage.getItem('redirected'));
     }
-    save(){
-        sessionStorage.setItem('urlParameters', this._urlParameters);
-        sessionStorage.setItem('timeSlotsFormElements', this._timeSlotsFormElements);
-        sessionStorage.setItem('bookingOptions', this._bookingOptions);
-        sessionStorage.setItem('redirected', this._redirected);
-    /*    writeToStorage('location', select_elements['location'].value);
+    /*save(){
+        this._localStorage.setItem('urlParameters', this._urlParameters);
+        this._localStorage.setItem('timeSlotsFormElements', this._timeSlotsFormElements);
+        this._localStorage.setItem('bookingOptions', this._bookingOptions);
+        this._localStorage.setItem('redirected', this._redirected);
+        writeToStorage('location', select_elements['location'].value);
         writeToStorage('service', select_elements['service'].value);
         writeToStorage('capacity', select_elements['capacity'].value);
-        writeToStorage('date', select_elements['date'].value);*/
-    }
-    restore(){
-        this._urlParameters = sessionStorage.getItem('urlParameters');
-        this._timeSlotsFormElements = sessionStorage.getItem('timeSlotsFormElements');
-        this._bookingOptions = sessionStorage.getItem('bookingOptions');
-        this._redirected = JSON.parse(sessionStorage.getItem('redirected'));
-    //    window.location.hash = "#booking";
-    }
-    clear(){
-        sessionStorage.removeItem('urlParameters');
-        sessionStorage.removeItem('timeSlotsFormElements');
-        sessionStorage.removeItem('bookingOptions');
-        sessionStorage.removeItem('redirected');
+        writeToStorage('date', select_elements['date'].value);
+    }*/
+/*    restore(){
+        this._urlParameters = this._localStorage.getItem('urlParameters');
+        this._timeSlotsFormElements = this._localStorage.getItem('timeSlotsFormElements');
+        this._bookingOptions = this._localStorage.getItem('bookingOptions');
+        this._redirected = JSON.parse(this._localStorage.getItem('redirected'));
+    //    window.location.hash = "#booking";*/
+    //}
 
-        this._urlParameters = null;
-        this._timeSlotsFormElements = null;
-        this._redirected = false;
-        this._bookingOptions = null;
+    clear(){
+        this._localStorage.clear();
     }
 }

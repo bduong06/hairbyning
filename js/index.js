@@ -51,19 +51,20 @@ const confirmBookingView = new ConfirmBookingView([{
     handler: handleLogout
 }]);
 
-const state = new State();
+const state = new State('HBN');
 
 (async function startBookingApp(){
 
+    const queryString = window.location.search;
     checkLoginState();
 
     await whenReady();
 
     bootstrap_init();
 
-    const searchParams = window.location.search;
-    if(searchParams.includes('liffClientId')){
-        bookingOptionsView.restore();
+    if(queryString.includes('liffClientId')){
+//        window.history.replaceState({}, document.title, window.location.pathname);
+        bookingOptionsModel.formElements = bookingOptionsView.restore();
         bookingOptionsSubmit();
     } else {
         try {
@@ -97,8 +98,9 @@ async function checkLoginState(){
 
 function handleBookingOptionsSubmit(event){
     event.preventDefault();
-    const date = this.elements['date'].value;
+//    const date = this.elements['date'].value;
     bookingOptionsModel.formElements = this.elements;
+    state.optionsFormElements = this.elements;
     termsConditionsView.render();
 }
 
@@ -113,8 +115,15 @@ async function handleSelectTimeSlot(event){
     if(event.target.hasAttribute('data-url-parameters')){
         timeSlotsModel.urlParameters = event.target.dataset.urlParameters;
         timeSlotsModel.formElements = this.querySelector('#time_slots_form').elements;
-        timeSlotsView.hide();
-        termsConditionsView.render();
+        bookingFormView.clear();
+        const response = await timeSlotsModel.selectTimeSlot();
+        bookingFormView.data = response;
+        bookingFormView.render();
+        bookingFormView.installHandlers([{
+            target: 'booking-form',
+            event: 'submit',
+            handler: handleBookingFormSubmit
+        }]);
     }
 }
 
