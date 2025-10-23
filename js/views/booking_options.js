@@ -88,4 +88,26 @@ export default class BookingOptionsView {
         }
         return formElements;
     }
+    save(){
+        const formElements = this.form.elements;
+        const elements = [{
+            'name': 'location',
+            'html':  formElements['location'].innerHTML
+        },{
+            'name': 'service',
+            'html': formElements['service'].innerHTML
+        },{
+            'name': 'capacity',
+            'html': formElements['capacity'].innerHTML,
+
+        }]
+        const values = {
+            'location': formElements['location'].value,
+            'service': formElements['service'].value,
+            'capacity': formElements['capacity'].value,
+            'date': formElements['date'].value
+        }
+        this._state.optionsFormElements = JSON.stringify(elements);
+        this._state.optionsFormValues = JSON.stringify(values);
+    }
 }

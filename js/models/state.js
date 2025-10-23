@@ -39,8 +39,7 @@ export default class State {
         this._localStorage.setItem('authLoggedIn', provider);
     }
     set urlParameters(urlParams){
-        this._urlParameters = urlParams;
-        this._localStorage.setItem('urlParameters', this._urlParameters);
+        this._localStorage.setItem('urlParameters', urlParams);
     }
     get urlParameters(){
         return this._localStorage.getItem('urlParameters');
@@ -54,37 +53,12 @@ export default class State {
     get optionsFormElements(){
         return this._localStorage.getItem('optionsFormElements');
     }
-    set optionsFormElements(formElements) {
-        const elements = [{
-            'name': 'location',
-            'html':  formElements['location'].innerHTML
-        },{
-            'name': 'service',
-            'html': formElements['service'].innerHTML
-        },{
-            'name': 'capacity',
-            'html': formElements['capacity'].innerHTML,
+    set optionsFormElements(elements) {
+        this._localStorage.setItem('optionsFormElements', elements);
 
-        }]
-        const values = {
-            'location': formElements['location'].value,
-            'service': formElements['service'].value,
-            'capacity': formElements['capacity'].value,
-            'date': formElements['date'].value
-        }
-        this._localStorage.setItem('optionsFormElements', JSON.stringify(elements));
-        this._localStorage.setItem('optionsFormValues', JSON.stringify(values));
-
-    }
-    set timeSlotsFormElements(formElements){
-        this._timeSlotsFormElements = formElements;
-        this._localStorage.setItem('timeSlotsFormElements', this._timeSlotsFormElements);
-    }
-    get timeSlotsFormElements(){
-        return this._localStorage.getItem('timeSlotsFormElements');
     }
     set redirected(redirected){
-        this._localStorage.setItem('redirected', this._redirected);
+        this._localStorage.setItem('redirected', redirected);
     }
     get redirected(){
         return JSON.parse(this._localStorage.getItem('redirected'));

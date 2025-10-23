@@ -1,4 +1,5 @@
 import { rpc } from "../../addons/web/static/src/core/network/rpc.js";
+import State from "./state.js";
 
 export default class FbOauth {
     constructor(config){
@@ -7,6 +8,7 @@ export default class FbOauth {
         this._clientId = config.clientId;
         this._scope = config.scope;
         this._state = config.state;
+        this._sessionState = new State('HBN');
     }
     authorize(){
         const redirectParams = new URLSearchParams({
@@ -33,7 +35,7 @@ export default class FbOauth {
                     this._changeLoginStatus(response);
                 }.bind(this));
             }
-        })
+        }.bind(this))
     }
     async _isLoggedInOdoo() {
         try {
@@ -46,6 +48,7 @@ export default class FbOauth {
     login(callback){
         FB.login( (response) => {
             if (response.authResponse) {
+                this._sessionState.authLoggedIn = 'facebook';
                 const access_token = encodeURIComponent(response.authResponse.accessToken);
                 const data_access_expiration_time = encodeURIComponent(response.authResponse.expiration_time);
                 const expires_in = encodeURIComponent(response.authResponse.expires_in);
@@ -72,6 +75,8 @@ export default class FbOauth {
             } else {
                 FB.logout();
                 console.log("JSON-RPC Error: _odoo_signin: ", response.error);
+                this._sessionState.authLoggedIn = null;
+                location.reload()
             }
             return response;
         } catch (error) {
@@ -93,7 +98,9 @@ export default class FbOauth {
                 FB.logout();
                 rpc('/web/session/destroy');
                 document.getElementById('user-logged-in').classList.add('d-none');
+                this._sessionState.clear();
+                location.reload();
             }
-        })
+        }.bind(this))
     }
 }

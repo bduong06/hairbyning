@@ -53,17 +53,14 @@ const confirmBookingView = new ConfirmBookingView([{
 
 const state = new State('HBN');
 
-(async function startBookingApp(){
+whenReady(async () => {
+
+    await liff.init({liffId: '2007896254-Dkr9Yr56'}); 
 
     const queryString = window.location.search;
-    checkLoginState();
 
-    await whenReady();
-
-    bootstrap_init();
-
-    if(queryString.includes('liffClientId')){
-//        window.history.replaceState({}, document.title, window.location.pathname);
+    await checkLoginState();
+    if(queryString.includes('liffClientId') && state.optionsFormElements){
         bookingOptionsModel.formElements = bookingOptionsView.restore();
         bookingOptionsSubmit();
     } else {
@@ -74,25 +71,14 @@ const state = new State('HBN');
             console.log("JSON-RPC Error:", error);
         }
     }
-
-
-/*     document.getElementById('continue-fb-login').addEventListener('click', function(){
-        FB.login(function(response) {
-            if (response.authResponse) {
-                authSignin(response.authResponse);
-//                checkLoginState();
-            } else {
-                console.log('User cancelled login or did not fully authorize.');
-            }
-        }, {scope: 'email,public_profile'});
-     });*/
-})();
+    bootstrap_init();
+});
 
 async function checkLoginState(){
     const authLoggedIn = state.authLoggedIn;
     if(authLoggedIn) {
         const authProvider = getOauthProvider(authLoggedIn);
-        authProvider.init();
+        await authProvider.init();
     }
 }
 
@@ -100,7 +86,7 @@ function handleBookingOptionsSubmit(event){
     event.preventDefault();
 //    const date = this.elements['date'].value;
     bookingOptionsModel.formElements = this.elements;
-    state.optionsFormElements = this.elements;
+    bookingOptionsView.save();
     termsConditionsView.render();
 }
 
@@ -168,54 +154,8 @@ async function handleBookingFormSubmit(event) {
         confirmBookingView.render();
 }
 
-async function continuePreviousBooking(){
-    bookingFormView.show();
-    timeSlotsModel.restore();
-    const response = await timeSlotsModel.selectTimeSlot();
-    bookingFormView.data = response;
-    bookingFormView.render();
-    bookingFormView.installHandlers([{
-        target: 'booking-form',
-        event: 'submit',
-        handler: handleBookingFormSubmit
-    }]);
-    state.clear();
-}
+function handleLogout(){
 
-function handleLogout(event){
-
-}
-
-async function authSignin(authResponse){
-    var accessToken = authResponse.accessToken;
-    var expiration_time = authResponse.data_access_expiration_time;  
-    var expires_in = authResponse.expiresIn;
-    try {
-        const params = new URLSearchParams();
-        params.append('access_token', encodeURIComponent(accessToken));
-        params.append('data_access_expiration_time', encodeURIComponent(expiration_time));
-        params.append('expires_in', encodeURIComponent(expires_in));
-        //params.append('state', JSON.stringify({"d": "bduongdb", "p": 2, "r": encodeURIComponent('https://localodoo.hairbyning.com')}));
-        params.append('state', JSON.stringify({"d": "bduongdb", "p": 2, "r": encodeURIComponent('https://localodoo.hairbyning.com')}));
-        params.append('no_redirect', true);
-        try {
-            const response = await fetch(`/auth_oauth/signin?${params}`);
-            const contModal = bootstrap.Modal.getInstance(document.getElementById('terms-condition-modal'));
-            if(response.status == '200'){
-                contModal.hide();
-                console.log('auth_oauth/signin');
-                console.log(response);
-            }
-            else {
-                console.log(response);
-            }
-        } catch (error) {
-            console.log("JSON-RPC Error:", error);
-        }
-
-    } catch (error) {
-        console.log("JSON-RPC Error:", error);
-    }
 }
 
 function bootstrap_init(){

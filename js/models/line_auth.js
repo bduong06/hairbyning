@@ -10,7 +10,7 @@ export default class LineOauth {
         this._liffId = config.liffId;
         this._scope = config.scope;
         this._state = config.state;
-        this._localState = new State('HBN');
+        this._sessionState = new State('HBN');
     }
     authorize(){
         const redirectParams = new URLSearchParams({
@@ -34,9 +34,8 @@ export default class LineOauth {
             const queryString = window.location.search;
             try {
                 if(queryString.includes('liffClientId')){
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                    console.log('queryString is ', queryString);
                     await this._odoo_signin();
+                    window.history.replaceState({}, document.title, window.location.pathname);
                 }
                 const img = document.getElementById('profile-image');
                 const profile = await liff.getProfile();
@@ -47,6 +46,7 @@ export default class LineOauth {
             } catch(error) {
                 liff.logout();
                 console.log("JSON-RPC Error: _odoo_signin: ", error);
+                location.reload();
             }
         } 
     }
@@ -64,8 +64,9 @@ export default class LineOauth {
                 event.preventDefault();
                 liff.logout();
                 rpc('/web/session/destroy');
-                this._localState.clear();
+                this._sessionState.clear();
                 document.getElementById('user-logged-in').classList.add('d-none');
+                location.reload();
             }
         }.bind(this))
     }
@@ -95,7 +96,7 @@ export default class LineOauth {
     async login(){
        // const redirect_uri = `${this._callbackUri}&scope=openid+profile+email&state=%7B%22d%22%3A+%22bduongdb%22,+%22p%22%3A+5,+%22r%22%3A+%22https%253A%252F%252Fhairbyning.com%252Fweb%22%7D`;
         //const redirect_uri = `${this._liffEndpoint}?state=${this._liffState}`;
-        this._localState.authLoggedIn = 'line';
+        this._sessionState.authLoggedIn = 'line';
         const redirectParams = new URLSearchParams({
             scope: this._scope,
             state: JSON.stringify(this._state)
@@ -108,7 +109,7 @@ export default class LineOauth {
 //            liff.login({redirectUri: redirect_uri});
            liff.login();
         } catch(error) {
-            this._localStage.authLoggedIn = null;
+            this._sessionStage.authLoggedIn = null;
             console.error("LIFF initialization failed", error);
         };
     }
