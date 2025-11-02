@@ -53,14 +53,14 @@ const confirmBookingView = new ConfirmBookingView([{
 
 const state = new State('HBN');
 
+liff.init({liffId: '2007896254-Dkr9Yr56'}, checkLoginState, errorCallback);
+
 whenReady(async () => {
 
-    await liff.init({liffId: '2007896254-Dkr9Yr56'}); 
+//    await liff.init({liffId: '2007896254-Dkr9Yr56'}); 
 
-    const queryString = window.location.search;
-
-    await checkLoginState();
-    if(queryString.includes('liffClientId') && state.optionsFormElements){
+//    await checkLoginState();
+    if(state.authLoggedIn && state.optionsFormElements){
         bookingOptionsModel.formElements = bookingOptionsView.restore();
         bookingOptionsSubmit();
     } else {
@@ -80,6 +80,9 @@ async function checkLoginState(){
         const authProvider = getOauthProvider(authLoggedIn);
         await authProvider.init();
     }
+}
+function errorCallback(err){
+    console.log(err.code, err.message);
 }
 
 function handleBookingOptionsSubmit(event){
@@ -123,7 +126,8 @@ function handleContinueBooking(event){
         case "continue-line-login":
             event.preventDefault();
             const lineAuth = getOauthProvider('line');
-            lineAuth.login();
+//            lineAuth.login();
+            lineAuth.authorize();
             break;
         case "continue-no-login":
         case "continue-logged-in-btn":
