@@ -36,21 +36,25 @@ export default class LineOauth {
         if(queryString = window.location.search) {
             window.history.replaceState({}, document.title, window.location.pathname);
         }
-        if (liff.isLoggedIn()) {
+        if (liff.isLoggedIn()) { 
+            document.getElementById('doc-spinner').style.display = 'flex';
             try {
-                const [result1, profile] = await Promise.all([
-//                    this._odoo_signin(),
-                    liff.getProfile()
-                ]);
+                if(queryString) {
+                    await  this._odoo_signin();
+                }
+                const profile = liff.getDecodedIDToken();
                 const img = document.getElementById('profile-image');
-                img.src = profile.pictureUrl;
+                img.src = profile.picture;
                 this._installLogoutHandler();
                 const userLoggedIn = document.getElementById('user-logged-in');
                 userLoggedIn.classList.remove('d-none');
+                document.getElementById('doc-spinner').style.display = 'none';
             } catch(error) {
                 liff.logout();
+                this._sessionState.authLoggedIn = 'line';
+                document.getElementById('doc-spinner').style.display = 'none';
                 console.log("JSON-RPC Error: _odoo_signin: ", error);
-                location.reload();
+//                location.reload();
             }
         } else {
                 console.log("liff.isLoggedIn is false");
@@ -92,7 +96,7 @@ export default class LineOauth {
             const response = await rpc('/hbn/auth_oauth/signin', params);
             return response;
         } catch (error) {
-            console.log("JSON-RPC Error: _odoo_signin: ", error);
+            throw error;
         }
     }
     async _get_session_info(){
@@ -116,10 +120,7 @@ export default class LineOauth {
 //            await liff.init({liffId: this._liffId});
            // liff.login({redirectUri: encodeURIComponent(this._callbackUri)});
 //            liff.login({redirectUri: redirect_uri});
-//           liff.login();
-            liff.init({
-                liffId: '2007896254-Dkr9Yr56',
-                withLoginOnExternalBrowser: true}); 
+           liff.login();
         } catch(error) {
             this._sessionStage.authLoggedIn = null;
             console.error("LIFF initialization failed", error);

@@ -28,6 +28,7 @@ export default class BookingFormModel {
            return response;
         } catch (error) {
             console.log("JSON-RPC Error:", error);
+            throw error;
         }
     }
 }

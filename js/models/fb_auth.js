@@ -46,6 +46,7 @@ export default class FbOauth {
         }
     }
     login(callback){
+        document.getElementById('doc-spinner').style.display = 'flex';
         FB.login( (response) => {
             if (response.authResponse) {
                 this._sessionState.authLoggedIn = 'facebook';
@@ -61,8 +62,10 @@ export default class FbOauth {
                 this._odoo_signin(callback, params);
             } else {
                 console.log('User cancelled login or did not fully authorize.');
+                document.getElementById('doc-spinner').style.display = 'none';
             }
         }, {scope: this._scope});
+        document.getElementById('doc-spinner').style.display = 'none';
     }
     async _odoo_signin(callback, params){
         try {

@@ -1,5 +1,6 @@
 import available_time_slots from "./available_time_slots.js";
 import requested_date_slots  from "./requested_date_slots.js";
+import State from "../models/state.js";
 
 export default class TimeSlotsView {
     constructor(handlers){
@@ -14,6 +15,11 @@ export default class TimeSlotsView {
             target: 'booking-modal-body-content',
             event: 'click',
             handler: this._handleClick
+        },
+        {
+            target: 'booking-modal',
+            event: 'hidden.bs.modal',
+            handler: this._handleClose
         }];
         if(handlers !== undefined) {
             console.log(handlers);
@@ -35,7 +41,6 @@ export default class TimeSlotsView {
         return this._data;
     }
     render(){
-
         let startIndex = this._data.slots.findIndex(slot => slot.slots.length > 0);
         const availableSlots = this._data.slots.slice(startIndex);
         const selectedDateIndex = availableSlots.findIndex(slot => slot.day == this._data.date);
@@ -174,6 +179,11 @@ export default class TimeSlotsView {
     }
     hide(){
         this._modal.hide();
+    }
+    _handleClose(event){
+        const state = new State('HBN');
+        state.optionsFormElements = null;
+        state.optionsFormValues = null;
     }
 
     showAvailableTimeSlotsTabs(tabList, startIndex){
